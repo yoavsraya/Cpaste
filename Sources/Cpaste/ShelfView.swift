@@ -83,6 +83,7 @@ struct ShelfActions {
     var beginEditing: (Clip) -> Void = { _ in }
     var commitEdit: () -> Void = {}
     var cancelEdit: () -> Void = {}
+    var setPinned: ([Clip], Bool) -> Void = { _, _ in }
 }
 
 enum CategoryPalette {
@@ -322,6 +323,8 @@ struct ShelfView: View {
             }
             Button("New category…") { actions.beginNaming(.new(assignTo: targets)) }
         }
+        let allPinned = targets.allSatisfy(\.isPinned)
+        Button(allPinned ? "Unpin" : "Pin to the front") { actions.setPinned(targets, !allPinned) }
         if targets.contains(where: { $0.categoryID != nil }) {
             Button("Remove from category") { actions.assign(targets, nil) }
         }
@@ -356,7 +359,12 @@ struct ClipCard: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .center) {
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(kind.title).font(.system(size: 14, weight: .semibold))
+                    HStack(spacing: 5) {
+                        Text(kind.title).font(.system(size: 14, weight: .semibold))
+                        if clip.isPinned {
+                            Image(systemName: "pin.fill").font(.system(size: 10))
+                        }
+                    }
                     Text(clip.lastUsedAt, format: .relative(presentation: .named))
                         .font(.system(size: 11)).opacity(0.85)
                 }

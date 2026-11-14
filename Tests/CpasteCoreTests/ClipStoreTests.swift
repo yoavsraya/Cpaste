@@ -111,3 +111,18 @@ import Testing
     let clip = try store.insert(.image(pngData()), sourceBundleID: nil)
     #expect(throws: ClipStoreError.notEditable) { try store.updateText(clipID: clip.id, to: "text") }
 }
+
+@Test func aPinnedClipSortsFirstAndSurvivesExpiryAndErase() throws {
+    let store = try makeStore()
+    let start = Date(timeIntervalSince1970: 1_000)
+    let old = try store.insert(.text("old and pinned"), sourceBundleID: nil, at: start)
+    let new = try store.insert(.text("new"), sourceBundleID: nil, at: start.addingTimeInterval(100))
+    try store.setPinned(clipIDs: [old.id], to: true)
+    #expect(try store.search("", in: .all, limit: 10).map(\.id) == [old.id, new.id])
+    #expect(try store.expire(olderThan: start.addingTimeInterval(50)) == 0)
+    #expect(try store.eraseHistory() == 1)
+    #expect(try store.search("", in: .all, limit: 10).map(\.isPinned) == [true])
+
+    try store.setPinned(clipIDs: [old.id], to: false)
+    #expect(try store.eraseHistory() == 1)
+}

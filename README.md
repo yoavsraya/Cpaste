@@ -63,7 +63,7 @@ Click the Cpaste icon in the menu bar and choose **Settings…**.
 - **Open at login** starts Cpaste whenever you turn on your Mac.
 - **Paste items** chooses what Return does. *To active app* pastes for you. *To clipboard* only copies the clip, and you press Cmd+V yourself.
 - **Keep history** sets how long clips outside a category are kept, from one day to forever.
-- **Erase History…** deletes every clip that is not in a category.
+- **Erase History…** deletes every clip that is not pinned or in a category.
 
 **Privacy**
 - **Show during screen sharing** can be turned off, so the shelf is left out of screen shares and recordings.

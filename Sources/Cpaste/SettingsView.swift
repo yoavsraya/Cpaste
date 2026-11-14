@@ -152,7 +152,7 @@ private struct GeneralPane: View {
                 .pickerStyle(.segmented).labelsHidden()
                 .onChange(of: settings.retention) { actions.retentionChanged() }
                 HStack(alignment: .firstTextBaseline) {
-                    Caption("Older clips are deleted, with their images. Clips in a category are kept forever.")
+                    Caption("Older clips are deleted, with their images. Pinned clips and clips in a category are kept forever.")
                     Spacer()
                     Button("Erase History…") { isConfirmingErase = true }
                 }
@@ -165,7 +165,7 @@ private struct GeneralPane: View {
         .confirmationDialog("Erase the clipboard history?", isPresented: $isConfirmingErase) {
             Button("Erase History", role: .destructive, action: actions.eraseHistory)
         } message: {
-            Text("Every clip that is not in a category is deleted, with its image. This cannot be undone.")
+            Text("Every clip that is not pinned or in a category is deleted, with its image. This cannot be undone.")
         }
     }
 
@@ -282,6 +282,8 @@ private struct ShortcutsPane: View {
                 LabeledContent("Paste the selected clip", value: "↩")
                 LabeledContent("Select several clips", value: "⌘click")
                 LabeledContent("Save to a category", value: "⌘S, or drag onto it")
+                LabeledContent("Edit the text of a clip", value: "⌘E")
+                LabeledContent("Pin or unpin", value: "⌘P")
                 LabeledContent("Delete", value: "⌘⌫")
                 LabeledContent("Next category", value: "⇥")
                 LabeledContent("Clear the search, then close", value: "esc")

@@ -50,7 +50,7 @@ public final class ClipStore: Sendable {
 
     public func recent(limit: Int) throws -> [Clip] {
         try database.read { db in
-            try Row.fetchAll(db, sql: "SELECT * FROM clip ORDER BY lastUsedAt DESC, id DESC LIMIT ?", arguments: [limit])
+            try Row.fetchAll(db, sql: "SELECT * FROM clip ORDER BY isPinned DESC, lastUsedAt DESC, id DESC LIMIT ?", arguments: [limit])
                 .map(Self.clip(from:))
         }
     }
@@ -77,7 +77,7 @@ public final class ClipStore: Sendable {
         let filterSQL = conditions.isEmpty ? "" : "WHERE " + conditions.joined(separator: " AND ")
         arguments.append(limit)
         return try database.read { db in
-            try Row.fetchAll(db, sql: "SELECT * FROM clip \(filterSQL) ORDER BY lastUsedAt DESC, id DESC LIMIT ?",
+            try Row.fetchAll(db, sql: "SELECT * FROM clip \(filterSQL) ORDER BY isPinned DESC, lastUsedAt DESC, id DESC LIMIT ?",
                              arguments: StatementArguments(arguments))
                 .map(Self.clip(from:))
         }
@@ -160,6 +160,14 @@ public final class ClipStore: Sendable {
         }
     }
 
+    public func setPinned(clipIDs: [Int64], to isPinned: Bool) throws {
+        try database.write { db in
+            for id in clipIDs {
+                try db.execute(sql: "UPDATE clip SET isPinned = ? WHERE id = ?", arguments: [isPinned, id])
+            }
+        }
+    }
+
     private static func category(from row: Row) -> ClipCategory {
         ClipCategory(id: row["id"], name: row["name"], colorHex: row["colorHex"], position: row["position"])
     }
@@ -171,18 +179,18 @@ public final class ClipStore: Sendable {
         }
     }
 
-    /// Deletes every clip that is not saved in a category. Returns how many were deleted.
+    /// Deletes every clip that is neither pinned nor saved in a category. Returns how many were deleted.
     @discardableResult
     public func eraseHistory() throws -> Int {
         try expire(olderThan: .distantFuture)
     }
 
-    /// Deletes unsaved clips last used before `cutoff`, with their image files. Returns how many were deleted.
+    /// Deletes clips last used before `cutoff` that are neither pinned nor saved, with their image files. Returns how many were deleted.
     @discardableResult
     public func expire(olderThan cutoff: Date) throws -> Int {
         let expired = try database.write { db in
             try Row.fetchAll(db, sql: """
-                DELETE FROM clip WHERE categoryID IS NULL AND lastUsedAt < ? RETURNING imageHash
+                DELETE FROM clip WHERE categoryID IS NULL AND isPinned = 0 AND lastUsedAt < ? RETURNING imageHash
                 """, arguments: [cutoff])
                 .map { $0["imageHash"] as String? }
         }
@@ -241,7 +249,7 @@ public final class ClipStore: Sendable {
         default: throw ClipStoreError.malformedRow(id: id)
         }
         return Clip(id: id, content: content, contentHash: row["contentHash"], sourceBundleID: row["sourceBundleID"],
-                    copiedAt: row["copiedAt"], lastUsedAt: row["lastUsedAt"], categoryID: row["categoryID"])
+                    copiedAt: row["copiedAt"], lastUsedAt: row["lastUsedAt"], categoryID: row["categoryID"], isPinned: row["isPinned"])
     }
 
     private static var migrator: DatabaseMigrator {
@@ -270,6 +278,11 @@ public final class ClipStore: Sendable {
             try db.create(virtualTable: "clip_fts", using: FTS5()) { t in
                 t.synchronize(withTable: "clip")
                 t.column("text")
+            }
+        }
+        migrator.registerMigration("v2 pinned clips") { db in
+            try db.alter(table: "clip") { t in
+                t.add(column: "isPinned", .boolean).notNull().defaults(to: false)
             }
         }
         return migrator

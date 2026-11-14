@@ -53,7 +53,8 @@ final class PanelController: NSObject, NSWindowDelegate {
             },
             beginEditing: { [weak self] in self?.beginEditing($0) },
             commitEdit: { [weak self] in self?.commitEdit() },
-            cancelEdit: { [weak self] in self?.endEditing() }
+            cancelEdit: { [weak self] in self?.endEditing() },
+            setPinned: { [weak self] clips, isPinned in self?.setPinned(clips, to: isPinned) }
         )
         panel.contentView = NSHostingView(rootView: ShelfView(model: model, imageFiles: store.imageFiles, actions: actions))
     }
@@ -161,6 +162,9 @@ final class PanelController: NSObject, NSWindowDelegate {
         case kVK_ANSI_S where command: showSaveMenu(for: model.selectedClips)
         case kVK_Delete where command: delete(model.selectedClips)
         case kVK_ANSI_E where command: selectedClip.map(beginEditing)
+        case kVK_ANSI_P where command:
+            let clips = model.selectedClips
+            setPinned(clips, to: !clips.allSatisfy(\.isPinned))
         default:
             guard settings.quickPasteModifier.isHeld(alone: event.modifierFlags),
                   let digit = event.characters(byApplyingModifiers: []).flatMap(Int.init),
@@ -218,6 +222,11 @@ final class PanelController: NSObject, NSWindowDelegate {
         let selection = model.selection
         change("delete the clips") { try $0.delete(clipIDs: clips.map(\.id)) }
         model.selection = movedSelection(from: selection, by: 0, count: model.clips.count) ?? 0
+    }
+
+    private func setPinned(_ clips: [Clip], to isPinned: Bool) {
+        guard !clips.isEmpty else { return }
+        change(isPinned ? "pin the clips" : "unpin the clips") { try $0.setPinned(clipIDs: clips.map(\.id), to: isPinned) }
     }
 
     private func beginEditing(_ clip: Clip) {

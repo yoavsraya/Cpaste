@@ -15,6 +15,8 @@ public struct Clip: Equatable, Sendable, Identifiable {
     public let copiedAt: Date
     public var lastUsedAt: Date
     public var categoryID: Int64?
+    /// A pinned clip sorts before the others and never expires.
+    public var isPinned: Bool
 }
 
 // Named ClipCategory because Foundation re-exports the Objective-C runtime's `Category` type.
