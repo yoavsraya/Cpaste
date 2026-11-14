@@ -41,6 +41,7 @@ Copy things the way you always do. Cpaste records them in the background.
 | Find a screenshot | Type `image` |
 | Select several clips | **Cmd+click** each one |
 | Delete the selected clips | **Cmd+Delete** |
+| Move between categories | **Cmd+Right** and **Cmd+Left**, or **Tab** |
 | Close | **Esc** |
 
 ### Keep clips forever with categories
@@ -56,12 +57,22 @@ A clip in a category is never deleted automatically. Click a category to see onl
 
 ### Settings
 
-Click the clipboard icon in the menu bar and choose **Settings…**.
+Click the Cpaste icon in the menu bar and choose **Settings…**.
 
-- **Keep history for** sets how long clips outside a category are kept, from one day to forever.
-- **Open Cpaste at login** starts it whenever you turn on your Mac.
-- **Shortcuts** lets you change Cmd+1 to something else.
-- **Ignored apps** lists apps whose copies are never recorded. 1Password and Apple Passwords are on the list from the start, so your passwords stay out of the history.
+**General**
+- **Open at login** starts Cpaste whenever you turn on your Mac.
+- **Paste items** chooses what Return does. *To active app* pastes for you. *To clipboard* only copies the clip, and you press Cmd+V yourself.
+- **Keep history** sets how long clips outside a category are kept, from one day to forever.
+- **Erase History…** deletes every clip that is not in a category.
+
+**Privacy**
+- **Show during screen sharing** can be turned off, so the shelf is left out of screen shares and recordings.
+- **Ignored applications** lists apps whose copies are never saved. 1Password, Apple Passwords and Keychain Access are on the list from the start.
+
+**Shortcuts**
+- Change the shortcut that opens Cpaste, and the ones that move between categories (Cmd+Right and Cmd+Left).
+- **Quick paste** picks the key you hold with a number to paste by position. Choose Option to get Option+1 to Option+9.
+- **Reset shortcuts to default…** puts everything back.
 
 ## Questions
 
@@ -69,7 +80,7 @@ Click the clipboard icon in the menu bar and choose **Settings…**.
 No. Your history is a folder on your Mac at `~/Library/Application Support/Cpaste/`. Cpaste makes no network connections.
 
 **How do I erase my history?**
-Quit Cpaste from its menu-bar icon and delete that folder.
+Open Settings and click **Erase History…**. Clips in a category stay. To remove everything, quit Cpaste and delete that folder.
 
 **Cmd+1 does something else in my browser.**
 Cpaste takes over Cmd+1 everywhere. Pick a different shortcut in Settings if you want it back.
@@ -89,6 +100,7 @@ You need Xcode 26 or later.
 
 ```bash
 swift test                 # run the tests
+CPASTE_RENDER=1 swift test # also draw the shelf and settings into build/*.png
 ./scripts/build-app.sh     # build build/Cpaste.app
 ./scripts/package.sh       # build dist/Cpaste.zip
 ```

@@ -5,91 +5,234 @@ import ServiceManagement
 import SwiftUI
 import UniformTypeIdentifiers
 
-struct SettingsView: View {
-    @Bindable var settings: AppSettings
+@MainActor
+struct SettingsActions {
     /// Turns the global shortcut off while a new one is being typed, and back on afterwards. Returns false if the system refused it.
-    let setShortcutActive: (Bool) -> Bool
-    let onRetentionChange: () -> Void
+    var setShortcutActive: (Bool) -> Bool = { _ in true }
+    var retentionChanged: () -> Void = {}
+    var eraseHistory: () -> Void = {}
+}
+
+struct SettingsView: View {
+    enum Pane: String, CaseIterable, Identifiable {
+        case general, privacy, shortcuts
+
+        var id: Self { self }
+
+        var title: String {
+            switch self {
+            case .general: "General"
+            case .privacy: "Privacy"
+            case .shortcuts: "Shortcuts"
+            }
+        }
+
+        var symbol: String {
+            switch self {
+            case .general: "gearshape"
+            case .privacy: "hand.raised"
+            case .shortcuts: "keyboard"
+            }
+        }
+    }
+
+    @Bindable var settings: AppSettings
+    let actions: SettingsActions
+    @State var pane: Pane = .general
 
     var body: some View {
-        TabView {
-            general.tabItem { Label("General", systemImage: "gearshape") }
-            shortcuts.tabItem { Label("Shortcuts", systemImage: "keyboard") }
-            ignoredApps.tabItem { Label("Ignored apps", systemImage: "eye.slash") }
+        HStack(spacing: 0) {
+            sidebar
+            Divider()
+            VStack(alignment: .leading, spacing: 0) {
+                Text(pane.title).font(.title2.weight(.semibold))
+                    .padding(.horizontal, 28).padding(.top, 22).padding(.bottom, 2)
+                switch pane {
+                case .general: GeneralPane(settings: settings, actions: actions)
+                case .privacy: PrivacyPane(settings: settings)
+                case .shortcuts: ShortcutsPane(settings: settings, actions: actions)
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .scrollContentBackground(.hidden)
+            .background(Color(nsColor: .windowBackgroundColor))
         }
-        .frame(width: 520, height: 440)
+        .frame(width: 760, height: 560)
+        .ignoresSafeArea()
     }
 
+    private var sidebar: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            ForEach(Pane.allCases) { item in
+                Button { pane = item } label: {
+                    Label(item.title, systemImage: item.symbol)
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(pane == item ? .white : .primary)
+                        .padding(.horizontal, 10).frame(maxWidth: .infinity, minHeight: 34, alignment: .leading)
+                        .background(pane == item ? Color.accentColor : .clear, in: RoundedRectangle(cornerRadius: 8))
+                        .contentShape(RoundedRectangle(cornerRadius: 8))
+                }
+                .buttonStyle(.plain)
+            }
+            Spacer()
+            HStack(spacing: 10) {
+                Image(nsImage: NSApp.applicationIconImage).resizable().frame(width: 36, height: 36)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("Cpaste").font(.system(size: 13, weight: .semibold))
+                    Text("Version \(Self.version)").font(.system(size: 11)).foregroundStyle(.secondary)
+                }
+            }
+            .padding(.horizontal, 6)
+        }
+        // The top padding clears the window's close button.
+        .padding(.horizontal, 12).padding(.top, 52).padding(.bottom, 16)
+        .frame(width: 200)
+        .background(VisualEffect(material: .sidebar))
+    }
+
+    private static var version: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "dev"
+    }
+}
+
+private struct Caption: View {
+    let text: String
+
+    init(_ text: String) {
+        self.text = text
+    }
+
+    var body: some View {
+        Text(text).font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+    }
+}
+
+private struct GeneralPane: View {
+    @Bindable var settings: AppSettings
+    let actions: SettingsActions
     @State private var opensAtLogin = SMAppService.mainApp.status == .enabled
     @State private var loginError: String?
+    @State private var canPasteDirectly = Paster.canPasteDirectly
+    @State private var isConfirmingErase = false
 
-    private var general: some View {
+    var body: some View {
         Form {
-            Toggle("Open Cpaste at login", isOn: $opensAtLogin)
-                .onChange(of: opensAtLogin) { _, enabled in
-                    do {
-                        if enabled { try SMAppService.mainApp.register() } else { try SMAppService.mainApp.unregister() }
-                        loginError = nil
-                    } catch {
-                        loginError = "macOS did not change the login setting. \(error.localizedDescription)"
+            Section {
+                Toggle("Open at login", isOn: $opensAtLogin)
+                    .onChange(of: opensAtLogin) { _, enabled in
+                        do {
+                            if enabled { try SMAppService.mainApp.register() } else { try SMAppService.mainApp.unregister() }
+                            loginError = nil
+                        } catch {
+                            loginError = "macOS did not change the login setting. \(error.localizedDescription)"
+                        }
+                    }
+                if let loginError {
+                    Text(loginError).font(.callout).foregroundStyle(.red)
+                }
+            }
+            Section("Paste items") {
+                target(.activeApp, title: "To active app",
+                       caption: "Return pastes the selected clip straight into the app you are using.")
+                target(.clipboard, title: "To clipboard",
+                       caption: "Return copies the selected clip, and you paste it yourself with ⌘V.")
+                if settings.pasteTarget == .activeApp, !canPasteDirectly {
+                    HStack {
+                        Label("Cpaste needs the Accessibility permission to paste for you.", systemImage: "exclamationmark.triangle")
+                            .font(.callout).foregroundStyle(.orange)
+                        Spacer()
+                        Button("Allow…", action: Paster.requestDirectPaste)
                     }
                 }
-            if let loginError {
-                Text(loginError).font(.footnote).foregroundStyle(.red)
             }
-            Picker("Keep history for", selection: $settings.retention) {
-                ForEach(Retention.allCases, id: \.self) { Text($0.label).tag($0) }
-            }
-            .onChange(of: settings.retention) { onRetentionChange() }
-            Text("Older clips are deleted, with their images. A shorter setting deletes right away and cannot be undone.")
-                .font(.footnote).foregroundStyle(.secondary)
-        }
-        .formStyle(.grouped)
-    }
-
-    private var shortcuts: some View {
-        Form {
-            Section("Everywhere") {
-                LabeledContent("Open Cpaste") {
-                    ShortcutRecorder(shortcut: $settings.openShortcut, setShortcutActive: setShortcutActive)
+            Section("Keep history") {
+                Picker("Keep history", selection: $settings.retention) {
+                    ForEach(Retention.allCases, id: \.self) { Text($0.label).tag($0) }
+                }
+                .pickerStyle(.segmented).labelsHidden()
+                .onChange(of: settings.retention) { actions.retentionChanged() }
+                HStack(alignment: .firstTextBaseline) {
+                    Caption("Older clips are deleted, with their images. Clips in a category are kept forever.")
+                    Spacer()
+                    Button("Erase History…") { isConfirmingErase = true }
                 }
             }
-            Section("While the shelf is open") {
-                LabeledContent("Move between clips", value: "←  →")
-                LabeledContent("Paste the selected clip", value: "↩")
-                LabeledContent("Paste by position", value: "⌘2 – ⌘9")
-                LabeledContent("Next or previous category", value: "⇥   ⇧⇥")
-                LabeledContent("Select several clips", value: "⌘click")
-                LabeledContent("Save the selected clips to a category", value: "⌘S, or drag them onto the category")
-                LabeledContent("Delete the selected clips", value: "⌘⌫")
-                LabeledContent("Clear the search", value: "esc")
-                LabeledContent("Close", value: "esc")
-            }
         }
         .formStyle(.grouped)
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            canPasteDirectly = Paster.canPasteDirectly
+        }
+        .confirmationDialog("Erase the clipboard history?", isPresented: $isConfirmingErase) {
+            Button("Erase History", role: .destructive, action: actions.eraseHistory)
+        } message: {
+            Text("Every clip that is not in a category is deleted, with its image. This cannot be undone.")
+        }
     }
 
-    private var ignoredApps: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Copies made while one of these apps is in front are not recorded.")
-                .font(.callout).foregroundStyle(.secondary)
-            List {
+    private func target(_ target: PasteTarget, title: String, caption: String) -> some View {
+        Button { settings.pasteTarget = target } label: {
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: settings.pasteTarget == target ? "largecircle.fill.circle" : "circle")
+                    .font(.system(size: 16))
+                    .foregroundStyle(settings.pasteTarget == target ? Color.accentColor : .secondary)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                    Caption(caption)
+                }
+                Spacer()
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+private struct PrivacyPane: View {
+    @Bindable var settings: AppSettings
+
+    var body: some View {
+        Form {
+            Section {
+                Toggle(isOn: $settings.showsDuringScreenSharing) {
+                    Text("Show during screen sharing")
+                    Caption("When this is off, the shelf is left out of screen shares, recordings and screenshots.")
+                }
+            }
+            Section {
+                Label {
+                    Text("Passwords are never saved")
+                    Caption("Cpaste skips anything a password manager marks as confidential or temporary.")
+                } icon: {
+                    Image(systemName: "lock.shield").foregroundStyle(.green)
+                }
+            }
+            Section {
                 ForEach(settings.ignoredBundleIDs, id: \.self) { bundleID in
-                    HStack {
+                    HStack(spacing: 10) {
                         if let icon = SourceApp.icon(bundleID: bundleID) {
-                            Image(nsImage: icon).resizable().frame(width: 22, height: 22)
+                            Image(nsImage: icon).resizable().frame(width: 26, height: 26)
+                        } else {
+                            Image(systemName: "app.dashed").font(.system(size: 20)).frame(width: 26, height: 26)
                         }
                         Text(SourceApp.name(bundleID: bundleID))
                         Spacer()
-                        Button("Remove") { settings.ignoredBundleIDs.removeAll { $0 == bundleID } }
-                            .controlSize(.small)
+                        Button {
+                            settings.ignoredBundleIDs.removeAll { $0 == bundleID }
+                        } label: {
+                            Image(systemName: "minus.circle")
+                        }
+                        .buttonStyle(.borderless).help("Stop ignoring this app")
                     }
                 }
+                Button("Add app…", action: addApp)
+            } header: {
+                Text("Ignored applications")
+            } footer: {
+                Caption("Copies made while one of these apps is in front are not saved.")
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .listStyle(.bordered)
-            Button("Add app…", action: addApp)
         }
-        .padding(20)
+        .formStyle(.grouped)
     }
 
     private func addApp() {
@@ -105,9 +248,72 @@ struct SettingsView: View {
     }
 }
 
+private struct ShortcutsPane: View {
+    @Bindable var settings: AppSettings
+    let actions: SettingsActions
+    @State private var isConfirmingReset = false
+
+    var body: some View {
+        Form {
+            Section {
+                recorder("Open Cpaste", $settings.openShortcut, reportsRefusal: true)
+            }
+            Section {
+                recorder("Show next category", $settings.nextCategoryShortcut)
+                recorder("Show previous category", $settings.previousCategoryShortcut)
+            }
+            Section {
+                LabeledContent("Quick paste") {
+                    HStack(spacing: 6) {
+                        Picker("Quick paste key", selection: $settings.quickPasteModifier) {
+                            ForEach(QuickPasteModifier.allCases, id: \.self) { Text($0.label).tag($0) }
+                        }
+                        .labelsHidden().fixedSize()
+                        Text("+ 1…9").foregroundStyle(.secondary)
+                    }
+                }
+                if settings.openShortcut.display.hasPrefix(settings.quickPasteModifier.symbol),
+                   settings.openShortcut.display.count == 2, Int(settings.openShortcut.keyLabel) != nil {
+                    Caption("\(settings.openShortcut.display) opens and closes Cpaste, so it cannot also paste clip \(settings.openShortcut.keyLabel).")
+                }
+            }
+            Section("In the shelf") {
+                LabeledContent("Move between clips", value: "←  →")
+                LabeledContent("Paste the selected clip", value: "↩")
+                LabeledContent("Select several clips", value: "⌘click")
+                LabeledContent("Save to a category", value: "⌘S, or drag onto it")
+                LabeledContent("Delete", value: "⌘⌫")
+                LabeledContent("Next category", value: "⇥")
+                LabeledContent("Clear the search, then close", value: "esc")
+            }
+            Section {
+                HStack {
+                    Spacer()
+                    Button("Reset shortcuts to default…") { isConfirmingReset = true }
+                }
+            }
+        }
+        .formStyle(.grouped)
+        .confirmationDialog("Reset all shortcuts to their defaults?", isPresented: $isConfirmingReset) {
+            Button("Reset Shortcuts") {
+                settings.resetShortcuts()
+                _ = actions.setShortcutActive(true)
+            }
+        }
+    }
+
+    private func recorder(_ title: String, _ shortcut: Binding<Shortcut>, reportsRefusal: Bool = false) -> some View {
+        LabeledContent(title) {
+            ShortcutRecorder(shortcut: shortcut, setShortcutActive: actions.setShortcutActive, reportsRefusal: reportsRefusal)
+        }
+    }
+}
+
 private struct ShortcutRecorder: View {
     @Binding var shortcut: Shortcut
     let setShortcutActive: (Bool) -> Bool
+    /// Only the global shortcut can be refused by macOS.
+    let reportsRefusal: Bool
     @State private var isRecording = false
     @State private var wasRefused = false
     @State private var monitor: Any?
@@ -115,10 +321,12 @@ private struct ShortcutRecorder: View {
     var body: some View {
         HStack(spacing: 8) {
             if wasRefused {
-                Text("macOS refused this shortcut").font(.footnote).foregroundStyle(.red)
+                Text("macOS refused this shortcut").font(.callout).foregroundStyle(.red)
             }
-            Button(isRecording ? "Type the new shortcut, esc to cancel" : shortcut.display) {
-                isRecording ? stop() : start()
+            Button { isRecording ? stop() : start() } label: {
+                Text(isRecording ? "Type shortcut, esc cancels" : shortcut.display)
+                    .font(.system(size: 13, weight: .medium, design: isRecording ? .default : .rounded))
+                    .frame(minWidth: 96)
             }
         }
         .onDisappear { if isRecording { stop() } }
@@ -126,6 +334,7 @@ private struct ShortcutRecorder: View {
 
     private func start() {
         isRecording = true
+        // The global shortcut is off while recording, so pressing it lands here and not in the shelf.
         _ = setShortcutActive(false)
         monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             if Int(event.keyCode) == kVK_Escape {
@@ -142,6 +351,7 @@ private struct ShortcutRecorder: View {
         if let monitor { NSEvent.removeMonitor(monitor) }
         monitor = nil
         isRecording = false
-        wasRefused = !setShortcutActive(true)
+        let registered = setShortcutActive(true)
+        wasRefused = reportsRefusal && !registered
     }
 }

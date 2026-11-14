@@ -14,14 +14,16 @@ final class PanelController: NSObject, NSWindowDelegate {
     private static let margin: CGFloat = 8
 
     private let store: ClipStore
+    private let settings: AppSettings
     private let model = ShelfModel()
     private let panel: NSPanel
     private let onPasted: (Clip) -> Void
     private var keyMonitor: Any?
 
     /// `onPasted` runs after a clip was written to the clipboard and before Command-V is sent.
-    init(store: ClipStore, onPasted: @escaping (Clip) -> Void) {
+    init(store: ClipStore, settings: AppSettings, onPasted: @escaping (Clip) -> Void) {
         self.store = store
+        self.settings = settings
         self.onPasted = onPasted
         // Non-activating, so the app the user came from stays frontmost and receives the paste.
         panel = ShelfPanel(contentRect: .zero, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: true)
@@ -61,7 +63,8 @@ final class PanelController: NSObject, NSWindowDelegate {
         model.query = ""
         model.filter = .all
         model.naming = nil
-        model.canPasteDirectly = Paster.canPasteDirectly
+        model.canPasteDirectly = !pastesIntoActiveApp || Paster.canPasteDirectly
+        panel.sharingType = settings.showsDuringScreenSharing ? .readOnly : .none
         reload()
 
         let mouse = NSEvent.mouseLocation
@@ -128,6 +131,14 @@ final class PanelController: NSObject, NSWindowDelegate {
             }
             return true
         }
+        if settings.nextCategoryShortcut.matches(event) {
+            cycleFilter(by: 1)
+            return true
+        }
+        if settings.previousCategoryShortcut.matches(event) {
+            cycleFilter(by: -1)
+            return true
+        }
         switch key {
         case kVK_LeftArrow: move(by: -1)
         case kVK_RightArrow: move(by: 1)
@@ -138,13 +149,16 @@ final class PanelController: NSObject, NSWindowDelegate {
         case kVK_ANSI_S where command: showSaveMenu(for: model.selectedClips)
         case kVK_Delete where command: delete(model.selectedClips)
         default:
-            guard command, let digit = event.characters(byApplyingModifiers: []).flatMap(Int.init),
+            guard settings.quickPasteModifier.isHeld(alone: event.modifierFlags),
+                  let digit = event.characters(byApplyingModifiers: []).flatMap(Int.init),
                   (1...9).contains(digit), model.clips.indices.contains(digit - 1)
             else { return false }
             paste(model.clips[digit - 1])
         }
         return true
     }
+
+    private var pastesIntoActiveApp: Bool { settings.pasteTarget == .activeApp }
 
     private var selectedClip: Clip? {
         model.clips.indices.contains(model.selection) ? model.clips[model.selection] : nil
@@ -175,7 +189,7 @@ final class PanelController: NSObject, NSWindowDelegate {
         }
         onPasted(clip)
         close()
-        guard Paster.canPasteDirectly else { return }
+        guard pastesIntoActiveApp, Paster.canPasteDirectly else { return }
         Task { @MainActor in
             // The previous app needs a moment to become key again before it can take the keystroke.
             try? await Task.sleep(for: .milliseconds(80))

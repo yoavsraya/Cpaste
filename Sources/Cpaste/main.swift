@@ -85,7 +85,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func startPanel(over store: ClipStore) {
         let queue = storeQueue
-        panel = PanelController(store: store) { [weak self] clip in
+        panel = PanelController(store: store, settings: settings) { [weak self] clip in
             self?.monitor?.skipCurrentContents()
             queue.async {
                 do {
@@ -129,20 +129,35 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    private func eraseHistory() {
+        guard let store else { return }
+        storeQueue.async {
+            do {
+                let count = try store.eraseHistory()
+                log.notice("erased \(count) clips")
+            } catch {
+                log.error("history not erased: \(String(describing: error), privacy: .public)")
+            }
+        }
+    }
+
     @objc private func togglePanel() {
         panel?.toggle()
     }
 
     @objc private func showSettings() {
         if settingsWindow == nil {
-            let view = SettingsView(
-                settings: settings,
+            let actions = SettingsActions(
                 setShortcutActive: { [weak self] in self?.setShortcutActive($0) ?? false },
-                onRetentionChange: { [weak self] in self?.expireOldClips() }
+                retentionChanged: { [weak self] in self?.expireOldClips() },
+                eraseHistory: { [weak self] in self?.eraseHistory() }
             )
-            let window = NSWindow(contentViewController: NSHostingController(rootView: view))
+            let window = NSWindow(contentViewController: NSHostingController(rootView: SettingsView(settings: settings, actions: actions)))
             window.title = "Cpaste Settings"
-            window.styleMask = [.titled, .closable]
+            window.styleMask = [.titled, .closable, .fullSizeContentView]
+            // The sidebar runs under the title bar, as in System Settings.
+            window.titlebarAppearsTransparent = true
+            window.titleVisibility = .hidden
             window.isReleasedWhenClosed = false
             window.center()
             settingsWindow = window

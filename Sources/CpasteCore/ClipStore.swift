@@ -144,6 +144,12 @@ public final class ClipStore: Sendable {
         }
     }
 
+    /// Deletes every clip that is not saved in a category. Returns how many were deleted.
+    @discardableResult
+    public func eraseHistory() throws -> Int {
+        try expire(olderThan: .distantFuture)
+    }
+
     /// Deletes unsaved clips last used before `cutoff`, with their image files. Returns how many were deleted.
     @discardableResult
     public func expire(olderThan cutoff: Date) throws -> Int {

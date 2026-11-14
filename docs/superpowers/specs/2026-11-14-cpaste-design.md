@@ -16,6 +16,7 @@ UI options for the panel are in `ui-options.html` next to this file, published a
 - Unsaved history expires after 30 days by default. Saved clips never expire.
 - Copying something already in history moves the existing clip to the top instead of adding a duplicate.
 - Skips items that password managers mark as concealed or transient (`org.nspasteboard.ConcealedType`, `org.nspasteboard.TransientType`).
+- Settings choose whether Return pastes into the active app or only copies, whether the shelf shows in screen shares, the shortcuts for the next and previous category, and the key for paste by position. Erase History deletes every unsaved clip.
 - Lives in the menu bar with no Dock icon. Starts at login when the setting is on.
 
 ## What it leaves out
