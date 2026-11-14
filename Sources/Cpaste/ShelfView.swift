@@ -39,8 +39,14 @@ final class ShelfModel {
     var sourceApps: [String] = []
     var naming: Naming?
     var nameDraft = ""
-    /// The clip whose text is open in the edit box.
-    var editing: Clip?
+    /// What the edit box is open for. Nil while it is closed.
+    var editor: Editor?
+
+    enum Editor: Equatable {
+        case editing(Clip)
+        /// A new clip typed by hand.
+        case composing
+    }
     var editDraft = ""
     var editError: String?
     /// Shown after a delete, while it can still be undone.
@@ -110,6 +116,7 @@ struct ShelfActions {
     var beginEditing: (Clip) -> Void = { _ in }
     var commitEdit: () -> Void = {}
     var cancelEdit: () -> Void = {}
+    var compose: () -> Void = {}
     var setPinned: ([Clip], Bool) -> Void = { _, _ in }
     var moveCategory: (ClipCategory, _ toPlaceOf: Int64) -> Void = { _, _ in }
     var moveClip: (Clip, _ toPlaceOf: Clip) -> Void = { _, _ in }
@@ -148,7 +155,7 @@ struct ShelfView: View {
     var body: some View {
         VStack(spacing: 0) {
             if model.position == .bottom { header } else { drawerHeader }
-            if model.editing != nil {
+            if model.editor != nil {
                 editor
             } else if let message = model.errorMessage {
                 notice(message)
@@ -167,7 +174,7 @@ struct ShelfView: View {
         .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).strokeBorder(.primary.opacity(0.14)))
         .onChange(of: model.query) { actions.reload() }
         .onChange(of: model.focusToken, initial: true) {
-            focus = model.editing != nil ? .editor : model.naming != nil ? .name : .search
+            focus = model.editor != nil ? .editor : model.naming != nil ? .name : .search
         }
     }
 
@@ -195,6 +202,7 @@ struct ShelfView: View {
             HStack(spacing: 6) {
                 searchField
                 filterMenu
+                composeButton
             }
             if model.naming != nil {
                 namingField
@@ -213,6 +221,7 @@ struct ShelfView: View {
             searchField.frame(width: 220)
 
             filterMenu
+            composeButton
 
             if model.naming != nil {
                 namingField
@@ -226,6 +235,14 @@ struct ShelfView: View {
                 .font(.system(size: 11)).foregroundStyle(.secondary).lineLimit(1)
         }
         .padding(.horizontal, 16).padding(.top, 12).padding(.bottom, 8)
+    }
+
+    private var composeButton: some View {
+        Button(action: actions.compose) {
+            Image(systemName: "square.and.pencil").font(.system(size: 13, weight: .medium))
+                .foregroundStyle(.secondary).frame(width: 26, height: 30).contentShape(Rectangle())
+        }
+        .buttonStyle(.plain).help("New clip (⌘N)")
     }
 
     private var filterMenu: some View {
@@ -357,7 +374,8 @@ struct ShelfView: View {
                 if let error = model.editError {
                     Text(error).font(.system(size: 11)).foregroundStyle(.red)
                 } else {
-                    Text("⌘↩ save    esc cancel").font(.system(size: 11)).foregroundStyle(.secondary)
+                    Text(model.editor == .composing ? "Type a new clip    ⌘↩ save    esc cancel" : "⌘↩ save    esc cancel")
+                        .font(.system(size: 11)).foregroundStyle(.secondary)
                 }
                 Spacer()
                 Button("Cancel", action: actions.cancelEdit)

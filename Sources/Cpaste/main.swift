@@ -65,6 +65,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         item.button?.image = Self.menuBarIcon()
         let menu = NSMenu()
         openMenuItem = menu.addItem(withTitle: "Open Cpaste", action: #selector(togglePanel), keyEquivalent: "")
+        menu.addItem(withTitle: "New Clip…", action: #selector(newClip), keyEquivalent: "n")
         menu.addItem(withTitle: "Settings…", action: #selector(showSettings), keyEquivalent: ",")
         let pause = menu.addItem(withTitle: "Pause Recording", action: nil, keyEquivalent: "")
         pause.submenu = NSMenu()
@@ -251,6 +252,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func checkForUpdates() {
         updater.checkForUpdates()
+    }
+
+    @objc private func newClip() {
+        panel?.compose()
     }
 
     @objc private func togglePanel() {

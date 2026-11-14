@@ -60,6 +60,7 @@ final class PanelController: NSObject, NSWindowDelegate {
             beginEditing: { [weak self] in self?.beginEditing($0) },
             commitEdit: { [weak self] in self?.commitEdit() },
             cancelEdit: { [weak self] in self?.endEditing() },
+            compose: { [weak self] in self?.beginComposing() },
             setPinned: { [weak self] clips, isPinned in self?.setPinned(clips, to: isPinned) },
             moveCategory: { [weak self] category, targetID in
                 self?.change("move the category") { try $0.moveCategory(id: category.id, toPlaceOf: targetID) }
@@ -73,6 +74,12 @@ final class PanelController: NSObject, NSWindowDelegate {
         panel.contentView = NSHostingView(rootView: ShelfView(model: model, imageFiles: store.imageFiles, actions: actions))
     }
 
+    /// Opens the shelf with the edit box ready for a new clip.
+    func compose() {
+        if !panel.isVisible || isClosing { show() }
+        beginComposing()
+    }
+
     func toggle() {
         panel.isVisible && !isClosing ? close(animated: true) : show()
     }
@@ -83,7 +90,7 @@ final class PanelController: NSObject, NSWindowDelegate {
         model.kindFilter = nil
         model.appFilter = nil
         model.naming = nil
-        model.editing = nil
+        model.editor = nil
         model.cardSize = settings.cardSize
         model.position = settings.shelfPosition
         model.canPasteDirectly = !pastesIntoActiveApp || Paster.canPasteDirectly
@@ -196,7 +203,7 @@ final class PanelController: NSObject, NSWindowDelegate {
     private func handle(_ event: NSEvent) -> Bool {
         let key = Int(event.keyCode)
         let command = event.modifierFlags.contains(.command)
-        if model.editing != nil {
+        if model.editor != nil {
             switch key {
             case kVK_Return where command: commitEdit()
             case kVK_Escape: endEditing()
@@ -236,6 +243,7 @@ final class PanelController: NSObject, NSWindowDelegate {
         case kVK_ANSI_C where command && event.modifierFlags.contains(.shift): selectedClip.map(copyImageText)
         case kVK_ANSI_C where command: selectedClip.map { paste($0, into: .clipboard) }
         case kVK_ANSI_O where command: selectedClip.map(open)
+        case kVK_ANSI_N where command: beginComposing()
         case kVK_ANSI_E where command: selectedClip.map(beginEditing)
         case kVK_ANSI_R where command: selectedClip.map { beginNaming(.renameClip($0)) }
         case kVK_ANSI_P where command:
@@ -362,30 +370,47 @@ final class PanelController: NSObject, NSWindowDelegate {
         model.naming = nil
         model.editDraft = text
         model.editError = nil
-        model.editing = clip
+        model.editor = .editing(clip)
         model.focusToken += 1
     }
 
     private func endEditing() {
-        model.editing = nil
+        model.editor = nil
+        model.focusToken += 1
+    }
+
+    /// Opens the edit box empty, to type a new clip by hand.
+    private func beginComposing() {
+        model.naming = nil
+        model.editDraft = ""
+        model.editError = nil
+        model.editor = .composing
         model.focusToken += 1
     }
 
     private func commitEdit() {
-        guard let clip = model.editing else { return }
+        guard let editor = model.editor else { return }
         guard !model.editDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            if editor == .composing { return endEditing() }
             model.editError = "A clip cannot be empty. Delete it instead."
             return
         }
-        guard model.editDraft != clip.editableText else { return endEditing() }
         do {
-            try store.updateText(clipID: clip.id, to: model.editDraft)
+            switch editor {
+            case .composing:
+                let clip = try store.add(text: model.editDraft)
+                // A clip typed while a category is open belongs in that category.
+                if case .category(let id) = model.filter { try store.setCategory(clipIDs: [clip.id], to: id) }
+            case .editing(let clip):
+                guard model.editDraft != clip.editableText else { return endEditing() }
+                try store.updateText(clipID: clip.id, to: model.editDraft)
+            }
         } catch {
-            log.error("cannot edit the clip: \(String(describing: error), privacy: .public)")
+            log.error("cannot save the clip: \(String(describing: error), privacy: .public)")
             model.editError = error.localizedDescription
             return
         }
-        let selection = model.selection
+        let selection = editor == .composing ? 0 : model.selection
         endEditing()
         reload()
         model.select(at: movedSelection(from: selection, by: 0, count: model.clips.count) ?? 0)

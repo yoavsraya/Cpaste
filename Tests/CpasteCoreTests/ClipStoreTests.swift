@@ -240,3 +240,10 @@ private func texts(_ store: ClipStore) throws -> [String] {
     #expect(try store.search("", in: .all, limit: 10).map(\.id) == [kept.id])
     #expect(try store.removeOrphanedImages() == 0)
 }
+
+@Test func aTypedClipIsTextOrALinkLikeACopiedOne() throws {
+    let store = try makeStore()
+    #expect(try store.add(text: "Wi-Fi password is on the fridge").content == .text("Wi-Fi password is on the fridge"))
+    #expect(try store.add(text: "https://www.booking.com").content == .link(URL(string: "https://www.booking.com")!))
+    #expect(try store.search("fridge", in: .all, limit: 10).count == 1)
+}

@@ -55,6 +55,12 @@ public final class ClipStore: Sendable {
         }
     }
 
+    /// Stores text the user typed, as a link when it is one web address and as text otherwise.
+    @discardableResult
+    public func add(text: String) throws -> Clip {
+        try insert(webLink(from: text).map(Capture.link) ?? .text(text), sourceBundleID: nil)
+    }
+
     public func recent(limit: Int) throws -> [Clip] {
         try database.read { db in
             try Row.fetchAll(db, sql: "SELECT * FROM clip ORDER BY isPinned DESC, position DESC, id DESC LIMIT ?", arguments: [limit])

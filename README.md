@@ -42,6 +42,7 @@ Copy things the way you always do. Cpaste records them in the background.
 | Copy a clip without pasting it | **Cmd+C** |
 | Open a link, show a file in Finder, or open an image | **Cmd+O** |
 | Use a clip in another app | Drag its card out of the shelf |
+| Type a new clip by hand | **Cmd+N**, the pencil button, or **New Clip…** in the menu-bar menu |
 | Give a clip a name | **Cmd+R**, or right-click and choose **Rename…** |
 | Edit the text of a clip | **Cmd+E**, then **Cmd+Return** to save |
 | Pin a clip to the front | **Cmd+P** |
