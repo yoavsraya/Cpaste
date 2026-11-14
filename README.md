@@ -49,7 +49,7 @@ Cpaste deletes clips after one month. To keep a clip, put it in a category.
 1. Click **+** at the top of the shelf and type a name, for example `Useful Links`.
 2. Drag a clip onto the category. You can also select the clip and press **Cmd+S**.
 
-A clip in a category is never deleted automatically. Click a category to see only its clips, or press **Tab** to move through the categories. Right-click a category to rename or delete it. Drag a clip back onto **Clipboard** to take it out of its category.
+A clip in a category is never deleted automatically. Click a category to see only its clips, or press **Tab** to move through the categories. Each category has a colour, and its clips get a header and frame in that colour so you can spot them. Right-click a category to rename it, change its colour, or delete it. Drag a clip back onto **Clipboard** to take it out of its category.
 
 ### Settings
 

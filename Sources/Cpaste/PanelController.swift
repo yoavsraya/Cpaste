@@ -12,7 +12,6 @@ private final class ShelfPanel: NSPanel {
 final class PanelController: NSObject, NSWindowDelegate {
     private static let height: CGFloat = 300
     private static let margin: CGFloat = 8
-    private static let categoryColors = ["#F0605D", "#4C8DF6", "#4CC764", "#F5A623", "#B46BE0", "#3CC8C8"]
 
     private let store: ClipStore
     private let model = ShelfModel()
@@ -46,6 +45,9 @@ final class PanelController: NSObject, NSWindowDelegate {
             beginNaming: { [weak self] in self?.beginNaming($0) },
             deleteCategory: { [weak self] category in
                 self?.change("delete the category") { try $0.deleteCategory(id: category.id) }
+            },
+            recolor: { [weak self] category, colorHex in
+                self?.change("recolour the category") { try $0.recolorCategory(id: category.id, to: colorHex) }
             }
         )
         panel.contentView = NSHostingView(rootView: ShelfView(model: model, imageFiles: store.imageFiles, actions: actions))
@@ -251,7 +253,7 @@ final class PanelController: NSObject, NSWindowDelegate {
     private func commitName() {
         let name = model.nameDraft.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !name.isEmpty, let naming = model.naming else { return endNaming() }
-        let color = Self.categoryColors[model.categories.count % Self.categoryColors.count]
+        let color = CategoryPalette.colors[model.categories.count % CategoryPalette.colors.count].hex
         change("save the category") { store in
             switch naming {
             case .new(let clip):

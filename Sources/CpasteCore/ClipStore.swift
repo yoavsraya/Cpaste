@@ -108,6 +108,12 @@ public final class ClipStore: Sendable {
         }
     }
 
+    public func recolorCategory(id: Int64, to colorHex: String) throws {
+        try database.write { db in
+            try db.execute(sql: "UPDATE category SET colorHex = ? WHERE id = ?", arguments: [colorHex, id])
+        }
+    }
+
     /// Deletes a category. Its clips go back to unsaved history.
     public func deleteCategory(id: Int64) throws {
         try database.write { db in

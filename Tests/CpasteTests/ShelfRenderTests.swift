@@ -36,6 +36,7 @@ import Testing
     let model = ShelfModel()
     model.categories = try store.categories()
     model.clips = try store.search("", in: .all, limit: 200)
+    model.selection = 1
     let view = ShelfView(model: model, imageFiles: store.imageFiles, actions: ShelfActions())
         .background(Color(white: 0.16))
     let host = NSHostingView(rootView: view)

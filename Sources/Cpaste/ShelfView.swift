@@ -36,6 +36,15 @@ struct ShelfActions {
     var delete: (Clip) -> Void = { _ in }
     var beginNaming: (ShelfModel.Naming) -> Void = { _ in }
     var deleteCategory: (ClipCategory) -> Void = { _ in }
+    var recolor: (ClipCategory, _ colorHex: String) -> Void = { _, _ in }
+}
+
+enum CategoryPalette {
+    static let colors: [(name: String, hex: String)] = [
+        ("Red", "#F0605D"), ("Blue", "#4C8DF6"), ("Green", "#4CC764"),
+        ("Orange", "#F5A623"), ("Purple", "#B46BE0"), ("Teal", "#3CC8C8"),
+        ("Pink", "#F06FA8"), ("Yellow", "#E8C53A"), ("Grey", "#8E99A4"),
+    ]
 }
 
 struct ShelfView: View {
@@ -107,6 +116,15 @@ struct ShelfView: View {
                     chip(title: category.name, color: Color(hex: category.colorHex), filter: .category(category.id))
                         .contextMenu {
                             Button("Rename…") { actions.beginNaming(.rename(category)) }
+                            Menu("Colour") {
+                                ForEach(CategoryPalette.colors, id: \.hex) { color in
+                                    Button {
+                                        actions.recolor(category, color.hex)
+                                    } label: {
+                                        Label(color.name, systemImage: category.colorHex == color.hex ? "checkmark" : "circle.fill")
+                                    }
+                                }
+                            }
                             Button("Delete category", role: .destructive) { actions.deleteCategory(category) }
                         }
                 }
@@ -249,7 +267,7 @@ struct ClipCard: View {
             }
             .foregroundStyle(.white)
             .padding(.horizontal, 12).frame(height: 46)
-            .background(kind.color)
+            .background(frameColor ?? kind.color)
 
             content
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -268,8 +286,14 @@ struct ClipCard: View {
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .strokeBorder(isSelected ? Color.accentColor : .white.opacity(0.08), lineWidth: isSelected ? 3 : 1)
+                .strokeBorder(isSelected ? Color.white : frameColor ?? .white.opacity(0.08),
+                              lineWidth: isSelected ? 3 : frameColor == nil ? 1 : 2)
         )
+    }
+
+    /// A saved clip takes its category's colour for the header and the frame.
+    private var frameColor: Color? {
+        category.map { Color(hex: $0.colorHex) }
     }
 
     @ViewBuilder private var content: some View {

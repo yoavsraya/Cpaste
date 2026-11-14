@@ -97,6 +97,13 @@ func awkwardQueriesDoNotThrow(query: String) throws {
     #expect(try store.categories().map(\.name) == ["Useful Links"])
 }
 
+@Test func recolouringACategory() throws {
+    let store = try makeStore()
+    let category = try store.createCategory(name: "Useful Links", colorHex: "#F0605D")
+    try store.recolorCategory(id: category.id, to: "#4C8DF6")
+    #expect(try store.categories().map(\.colorHex) == ["#4C8DF6"])
+}
+
 @Test func deletingAnImageClipRemovesItsFiles() throws {
     let store = try seededStore()
     let image = try #require(try store.search("image", in: .all, limit: 1).first)
