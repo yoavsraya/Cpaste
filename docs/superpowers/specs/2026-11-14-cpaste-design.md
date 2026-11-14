@@ -12,7 +12,7 @@ UI options for the panel are in `ui-options.html` next to this file, published a
 - Left and right arrows move the selection. Return pastes the selected clip into the app you came from. Cmd+2 to Cmd+9 paste by position while the panel is open. Cmd+1 closes it.
 - Cmd+click adds a clip to the selection or takes it out. Save, drag to a category, and delete act on every selected clip. Return still pastes one clip.
 - Typing filters clips by their text. A clip matches when it has a word starting with each word typed. Images match the word "image".
-- Categories hold saved clips. Dragging a clip onto a category saves it there, and so does Cmd+S. Dragging it onto Clipboard returns it to history. A saved clip is drawn with its header and frame in the category colour, and the colour is chosen from a fixed list. A clip belongs to at most one category.
+- Categories hold saved clips. Dragging a clip onto a category saves it there, and so does Cmd+S. Dragging it onto Clipboard returns it to history. A saved clip is drawn with its header and frame in the category colour, and the colour is chosen from a fixed list. An unsaved clip takes its header colour from the icon of the app it was copied from, and falls back to a colour per clip type when the icon is grey. A clip belongs to at most one category.
 - Unsaved history expires after 30 days by default. Saved clips never expire.
 - Copying something already in history moves the existing clip to the top instead of adding a duplicate.
 - Skips items that password managers mark as concealed or transient (`org.nspasteboard.ConcealedType`, `org.nspasteboard.TransientType`).

@@ -317,7 +317,7 @@ struct ClipCard: View {
             }
             .foregroundStyle(.white)
             .padding(.horizontal, 12).frame(height: 46)
-            .background(frameColor ?? kind.color)
+            .background(frameColor ?? SourceApp.color(bundleID: clip.sourceBundleID) ?? kind.color)
 
             content
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -395,6 +395,17 @@ enum SourceApp {
         let icon = NSWorkspace.shared.icon(forFile: url.path)
         icons[bundleID] = icon
         return icon
+    }
+
+    private static var colors: [String: Color?] = [:]
+
+    /// The header colour for clips copied from this app, taken from its icon.
+    static func color(bundleID: String?) -> Color? {
+        guard let bundleID else { return nil }
+        if let cached = colors[bundleID] { return cached }
+        let color = icon(bundleID: bundleID).flatMap(IconColor.dominant(of:)).map { Color(nsColor: $0) }
+        colors[bundleID] = color
+        return color
     }
 
     static func name(bundleID: String) -> String {
