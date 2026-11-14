@@ -299,6 +299,8 @@ private struct ShortcutsPane: View {
                 LabeledContent("Paste the selected clip", value: "↩")
                 LabeledContent("Select several clips", value: "⌘click")
                 LabeledContent("Save to a category", value: "⌘S, or drag onto it")
+                LabeledContent("Copy without pasting", value: "⌘C")
+                LabeledContent("Open a link, file or image", value: "⌘O")
                 LabeledContent("Rename a clip", value: "⌘R")
                 LabeledContent("Edit the text of a clip", value: "⌘E")
                 LabeledContent("Pin or unpin", value: "⌘P")

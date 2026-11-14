@@ -91,6 +91,8 @@ final class ShelfModel {
 @MainActor
 struct ShelfActions {
     var paste: (Clip) -> Void = { _ in }
+    var copy: (Clip) -> Void = { _ in }
+    var open: (Clip) -> Void = { _ in }
     var requestDirectPaste: () -> Void = {}
     var reload: () -> Void = {}
     var assign: ([Clip], _ categoryID: Int64?) -> Void = { _, _ in }
@@ -351,7 +353,7 @@ struct ShelfView: View {
                             .contextMenu { cardMenu(for: clip) }
                             .onDrag {
                                 model.dragged = .clip(clip)
-                                return Self.dragProvider(id: clip.id)
+                                return dragProvider(for: clip)
                             }
                             .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
                                 .strokeBorder(Color.accentColor, lineWidth: cardDropTarget == clip.id ? 3 : 0))
@@ -387,11 +389,41 @@ struct ShelfView: View {
         return provider
     }
 
+    /// A clip also carries its real content, so it can be dropped into another app.
+    private func dragProvider(for clip: Clip) -> NSItemProvider {
+        let provider = Self.dragProvider(id: clip.id)
+        switch clip.content {
+        case .text(let string):
+            provider.registerObject(string as NSString, visibility: .all)
+        case .link(let url):
+            provider.registerObject(url as NSURL, visibility: .all)
+            provider.registerObject(url.absoluteString as NSString, visibility: .all)
+        case .file(let path):
+            provider.registerObject(URL(fileURLWithPath: path) as NSURL, visibility: .all)
+        case .image(let sha, _, _, _):
+            let url = imageFiles.imageURL(sha256: sha)
+            provider.suggestedName = clip.title ?? "Image"
+            provider.registerDataRepresentation(forTypeIdentifier: UTType.png.identifier, visibility: .all) { completion in
+                do {
+                    completion(try Data(contentsOf: url), nil)
+                } catch {
+                    completion(nil, error)
+                }
+                return nil
+            }
+        }
+        return provider
+    }
+
     @ViewBuilder private func cardMenu(for clip: Clip) -> some View {
         let targets = model.targets(for: clip)
         let many = targets.count > 1
         if !many {
             Button("Paste") { actions.paste(clip) }
+            Button("Copy") { actions.copy(clip) }
+            if let title = clip.openTitle {
+                Button(title) { actions.open(clip) }
+            }
             Button("Rename…") { actions.beginNaming(.renameClip(clip)) }
             if clip.isEditable {
                 Button("Edit…") { actions.beginEditing(clip) }
@@ -596,6 +628,16 @@ extension Clip {
         switch content {
         case .text, .link: true
         case .image, .file: false
+        }
+    }
+
+    /// The menu title for opening the clip outside Cpaste. Plain text has nothing to open.
+    var openTitle: String? {
+        switch content {
+        case .text: nil
+        case .link: "Open Link"
+        case .file: "Show in Finder"
+        case .image: "Open Image"
         }
     }
 

@@ -36,6 +36,8 @@ final class PanelController: NSObject, NSWindowDelegate {
         panel.delegate = self
         let actions = ShelfActions(
             paste: { [weak self] in self?.paste($0) },
+            copy: { [weak self] in self?.paste($0, into: .clipboard) },
+            open: { [weak self] in self?.open($0) },
             requestDirectPaste: { [weak self] in
                 self?.close()
                 Paster.requestDirectPaste()
@@ -165,12 +167,14 @@ final class PanelController: NSObject, NSWindowDelegate {
         switch key {
         case kVK_LeftArrow: move(by: -1)
         case kVK_RightArrow: move(by: 1)
-        case kVK_Return, kVK_ANSI_KeypadEnter: selectedClip.map(paste)
+        case kVK_Return, kVK_ANSI_KeypadEnter: selectedClip.map { paste($0) }
         case kVK_Tab: cycleFilter(by: event.modifierFlags.contains(.shift) ? -1 : 1)
         case kVK_Escape:
             if model.query.isEmpty { close() } else { model.query = "" }
         case kVK_ANSI_S where command: showSaveMenu(for: model.selectedClips)
         case kVK_Delete where command: delete(model.selectedClips)
+        case kVK_ANSI_C where command: selectedClip.map { paste($0, into: .clipboard) }
+        case kVK_ANSI_O where command: selectedClip.map(open)
         case kVK_ANSI_E where command: selectedClip.map(beginEditing)
         case kVK_ANSI_R where command: selectedClip.map { beginNaming(.renameClip($0)) }
         case kVK_ANSI_P where command:
@@ -207,7 +211,18 @@ final class PanelController: NSObject, NSWindowDelegate {
 
     // MARK: Clips
 
-    private func paste(_ clip: Clip) {
+    private func open(_ clip: Clip) {
+        switch clip.content {
+        case .text: return
+        case .link(let url): NSWorkspace.shared.open(url)
+        case .file(let path): NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: path)])
+        case .image(let sha, _, _, _): NSWorkspace.shared.open(store.imageFiles.imageURL(sha256: sha))
+        }
+        close()
+    }
+
+    /// Puts the clip on the clipboard and closes. With `.activeApp` it also presses Command-V in the app the user came from.
+    private func paste(_ clip: Clip, into target: PasteTarget? = nil) {
         do {
             try Paster.write(clip, imageFiles: store.imageFiles)
         } catch {
@@ -217,7 +232,7 @@ final class PanelController: NSObject, NSWindowDelegate {
         }
         onPasted(clip)
         close()
-        guard pastesIntoActiveApp, Paster.canPasteDirectly else { return }
+        guard (target ?? settings.pasteTarget) == .activeApp, Paster.canPasteDirectly else { return }
         Task { @MainActor in
             // The previous app needs a moment to become key again before it can take the keystroke.
             try? await Task.sleep(for: .milliseconds(80))
