@@ -1,4 +1,5 @@
 import AppKit
+import Carbon.HIToolbox
 import CpasteCore
 import ServiceManagement
 import SwiftUI
@@ -58,8 +59,9 @@ struct SettingsView: View {
                 LabeledContent("Paste the selected clip", value: "↩")
                 LabeledContent("Paste by position", value: "⌘2 – ⌘9")
                 LabeledContent("Next or previous category", value: "⇥   ⇧⇥")
-                LabeledContent("Save the selected clip to a category", value: "⌘S, or drag it onto the category")
-                LabeledContent("Delete the selected clip", value: "⌘⌫")
+                LabeledContent("Select several clips", value: "⌘click")
+                LabeledContent("Save the selected clips to a category", value: "⌘S, or drag them onto the category")
+                LabeledContent("Delete the selected clips", value: "⌘⌫")
                 LabeledContent("Clear the search", value: "esc")
                 LabeledContent("Close", value: "esc")
             }
@@ -126,7 +128,7 @@ private struct ShortcutRecorder: View {
         isRecording = true
         _ = setShortcutActive(false)
         monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-            if event.keyCode == 53 {
+            if Int(event.keyCode) == kVK_Escape {
                 stop()
             } else if let recorded = Shortcut(event: event) {
                 shortcut = recorded
