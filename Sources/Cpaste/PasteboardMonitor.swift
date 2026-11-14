@@ -7,6 +7,8 @@ final class PasteboardMonitor {
     private let onCapture: (Capture, _ sourceBundleID: String?) -> Void
     private var lastChangeCount: Int
     private var timer: Timer?
+    /// While true, copies are seen and dropped, so nothing made during a pause is recorded later.
+    var isPaused = false
 
     init(onCapture: @escaping (Capture, _ sourceBundleID: String?) -> Void) {
         self.onCapture = onCapture
@@ -28,6 +30,7 @@ final class PasteboardMonitor {
     private func poll() {
         guard pasteboard.changeCount != lastChangeCount else { return }
         lastChangeCount = pasteboard.changeCount
+        guard !isPaused else { return }
         let types = Set((pasteboard.types ?? []).map(\.rawValue))
         let pasteboard = pasteboard
         guard let capture = classify(types: types, read: { pasteboard.data(forType: .init($0)) }) else { return }

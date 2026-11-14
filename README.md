@@ -50,6 +50,10 @@ Copy things the way you always do. Cpaste records them in the background.
 | Select several clips | **Cmd+click** each one |
 | Delete the selected clips | **Cmd+Delete** |
 | Move between categories | **Cmd+Right** and **Cmd+Left**, or **Tab** |
+| Undo a delete | **Cmd+Z**, while the shelf is still open |
+| Merge the selected clips into one | **Cmd+J** |
+| Copy the words out of an image | **Shift+Cmd+C** |
+| Stop recording for a while | Menu-bar icon, **Pause Recording** |
 | Close | **Esc** |
 
 ### Keep clips forever with categories

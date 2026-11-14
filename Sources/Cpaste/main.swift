@@ -19,6 +19,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var settingsWindow: NSWindow?
     private var welcomeWindow: NSWindow?
     private var updateMenuItem: NSMenuItem?
+    private var pauseMenuItem: NSMenuItem?
+    private var resumeTimer: Timer?
     private let updater = UpdaterController()
     private var expiryTimer: Timer?
 
@@ -64,6 +66,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let menu = NSMenu()
         openMenuItem = menu.addItem(withTitle: "Open Cpaste", action: #selector(togglePanel), keyEquivalent: "")
         menu.addItem(withTitle: "Settings…", action: #selector(showSettings), keyEquivalent: ",")
+        let pause = menu.addItem(withTitle: "Pause Recording", action: nil, keyEquivalent: "")
+        pause.submenu = NSMenu()
+        pauseMenuItem = pause
+        rebuildPauseMenu()
         updateMenuItem = menu.addItem(withTitle: "Check for Updates…", action: #selector(checkForUpdates), keyEquivalent: "")
         menu.addItem(.separator())
         menu.addItem(withTitle: "Quit Cpaste", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
@@ -175,6 +181,43 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             log.error("history size not read: \(String(describing: error), privacy: .public)")
             return nil
         }
+    }
+
+    // MARK: Pausing
+
+    private func rebuildPauseMenu() {
+        guard let item = pauseMenuItem, let menu = item.submenu else { return }
+        let isPaused = monitor?.isPaused ?? false
+        menu.removeAllItems()
+        if isPaused {
+            item.title = resumeTimer.map { "Recording Paused until \($0.fireDate.formatted(date: .omitted, time: .shortened))" } ?? "Recording Paused"
+            menu.addItem(withTitle: "Resume Recording", action: #selector(resumeRecording), keyEquivalent: "")
+        } else {
+            item.title = "Pause Recording"
+            for (title, minutes) in [("For 5 Minutes", 5), ("For 1 Hour", 60), ("Until I Resume", 0)] {
+                menu.addItem(withTitle: title, action: #selector(pauseRecording(_:)), keyEquivalent: "").tag = minutes
+            }
+        }
+        // A dimmed icon shows at a glance that copies are not being recorded.
+        statusItem?.button?.appearsDisabled = isPaused
+    }
+
+    @objc private func pauseRecording(_ sender: NSMenuItem) {
+        monitor?.isPaused = true
+        resumeTimer?.invalidate()
+        resumeTimer = sender.tag == 0 ? nil : Timer.scheduledTimer(withTimeInterval: Double(sender.tag) * 60, repeats: false) { [weak self] _ in
+            MainActor.assumeIsolated { self?.resumeRecording() }
+        }
+        log.notice("recording paused for \(sender.tag) minutes, 0 meaning until resumed")
+        rebuildPauseMenu()
+    }
+
+    @objc private func resumeRecording() {
+        monitor?.isPaused = false
+        resumeTimer?.invalidate()
+        resumeTimer = nil
+        log.notice("recording resumed")
+        rebuildPauseMenu()
     }
 
     @objc private func checkForUpdates() {
