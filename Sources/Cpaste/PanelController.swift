@@ -57,6 +57,9 @@ final class PanelController: NSObject, NSWindowDelegate {
             recolor: { [weak self] category, colorHex in
                 self?.change("recolour the category") { try $0.recolorCategory(id: category.id, to: colorHex) }
             },
+            setIcon: { [weak self] category, icon in
+                self?.change("set the category icon") { try $0.setCategoryIcon(id: category.id, to: icon) }
+            },
             beginEditing: { [weak self] in self?.beginEditing($0) },
             commitEdit: { [weak self] in self?.commitEdit() },
             cancelEdit: { [weak self] in self?.endEditing() },

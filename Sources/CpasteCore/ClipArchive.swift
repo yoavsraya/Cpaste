@@ -11,6 +11,7 @@ public struct ClipArchive: Codable, Equatable, Sendable {
     public struct Category: Codable, Equatable, Sendable {
         public var name: String
         public var colorHex: String
+        public var icon: String?
         public var clips: [Item]
     }
 
@@ -45,7 +46,7 @@ extension ClipStore {
     /// Every category with the clips saved in it, in shelf order.
     public func exportArchive() throws -> Data {
         let categories = try self.categories().map { category in
-            ClipArchive.Category(name: category.name, colorHex: category.colorHex, clips: try search("", in: .category(category.id), limit: .max).compactMap { clip in
+            ClipArchive.Category(name: category.name, colorHex: category.colorHex, icon: category.icon, clips: try search("", in: .category(category.id), limit: .max).compactMap { clip in
                 // A copied file is only a path, which means nothing on another Mac, so it is left out.
                 if clip.content.kind == .file { return nil }
                 var item = ClipArchive.Item(kind: clip.content.kind, title: clip.title, isPinned: clip.isPinned, sourceBundleID: clip.sourceBundleID)
@@ -71,7 +72,13 @@ extension ClipStore {
         var existing = Dictionary(try categories().map { ($0.name, $0.id) }, uniquingKeysWith: { first, _ in first })
         var count = 0
         for category in archive.categories {
-            let categoryID = try existing[category.name] ?? createCategory(name: category.name, colorHex: category.colorHex).id
+            let categoryID: Int64
+            if let known = existing[category.name] {
+                categoryID = known
+            } else {
+                categoryID = try createCategory(name: category.name, colorHex: category.colorHex).id
+                try setCategoryIcon(id: categoryID, to: category.icon)
+            }
             existing[category.name] = categoryID
             // Reversed, because each insert goes to the front and the file lists the front clip first.
             for item in category.clips.reversed() {

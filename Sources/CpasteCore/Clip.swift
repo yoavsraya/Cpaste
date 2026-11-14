@@ -55,6 +55,8 @@ public struct ClipCategory: Equatable, Sendable, Identifiable {
     public var name: String
     public var colorHex: String
     public var position: Int
+    /// An emoji shown next to the name.
+    public var icon: String?
 }
 
 public enum ClipFilter: Equatable, Sendable {

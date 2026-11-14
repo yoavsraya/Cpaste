@@ -15,12 +15,14 @@ import Testing
     try source.setCategory(clipIDs: [number.id], to: numbers.id)
     try source.rename(clipID: number.id, to: "הזמנה")
     try source.setPinned(clipIDs: [link.id], to: true)
+    try source.setCategoryIcon(id: links.id, to: "🔗")
 
     let target = try makeStore()
     #expect(try target.importArchive(try source.exportArchive()) == 3)
 
     #expect(try target.categories().map(\.name) == ["Useful Links", "מספרים חשובים"])
     #expect(try target.categories().map(\.colorHex) == ["#F0605D", "#4C8DF6"])
+    #expect(try target.categories().map(\.icon) == ["🔗", nil])
     let imported = try target.search("", in: .category(try target.categories()[0].id), limit: 10)
     #expect(imported.map(\.content.kind) == [.link, .image])
     #expect(imported.map(\.isPinned) == [true, false])

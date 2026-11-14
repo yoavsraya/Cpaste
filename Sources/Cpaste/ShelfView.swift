@@ -114,6 +114,7 @@ struct ShelfActions {
     var beginNaming: (ShelfModel.Naming) -> Void = { _ in }
     var deleteCategory: (ClipCategory) -> Void = { _ in }
     var recolor: (ClipCategory, _ colorHex: String) -> Void = { _, _ in }
+    var setIcon: (ClipCategory, _ icon: String?) -> Void = { _, _ in }
     var beginEditing: (Clip) -> Void = { _ in }
     var commitEdit: () -> Void = {}
     var cancelEdit: () -> Void = {}
@@ -123,6 +124,10 @@ struct ShelfActions {
     var moveClip: (Clip, _ toPlaceOf: Clip) -> Void = { _, _ in }
     var merge: ([Clip]) -> Void = { _ in }
     var copyImageText: (Clip) -> Void = { _ in }
+}
+
+enum CategoryIcons {
+    static let all = ["⭐️", "❤️", "🔗", "💼", "🏠", "✈️", "🛒", "💳", "🔑", "📞", "✉️", "📝", "💡", "🎨", "🧑‍💻", "📚", "🎵", "🍽️"]
 }
 
 enum CategoryPalette {
@@ -290,7 +295,8 @@ struct ShelfView: View {
             HStack(spacing: 4) {
                 chip(title: "Clipboard", color: nil, filter: .all)
                 ForEach(model.categories) { category in
-                    chip(title: category.name, color: Color(hex: category.colorHex), filter: .category(category.id))
+                    chip(title: [category.icon, category.name].compactMap { $0 }.joined(separator: " "),
+                         color: Color(hex: category.colorHex), filter: .category(category.id))
                         .onDrag {
                             model.dragged = .category(category)
                             return Self.dragProvider(id: category.id)
@@ -309,6 +315,12 @@ struct ShelfView: View {
                                             Image(nsImage: CategoryPalette.swatch(hex: color.hex))
                                         }
                                     }
+                                }
+                            }
+                            Menu("Icon") {
+                                Button("None") { actions.setIcon(category, nil) }
+                                ForEach(CategoryIcons.all, id: \.self) { icon in
+                                    Button(category.icon == icon ? "\(icon) ✓" : icon) { actions.setIcon(category, icon) }
                                 }
                             }
                             Button("Delete category", role: .destructive) { actions.deleteCategory(category) }

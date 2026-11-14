@@ -249,6 +249,13 @@ public final class ClipStore: Sendable {
         }
     }
 
+    /// Sets the emoji shown next to the category's name. Nil removes it.
+    public func setCategoryIcon(id: Int64, to icon: String?) throws {
+        try database.write { db in
+            try db.execute(sql: "UPDATE category SET icon = ? WHERE id = ?", arguments: [icon, id])
+        }
+    }
+
     public func recolorCategory(id: Int64, to colorHex: String) throws {
         try database.write { db in
             try db.execute(sql: "UPDATE category SET colorHex = ? WHERE id = ?", arguments: [colorHex, id])
@@ -325,7 +332,7 @@ public final class ClipStore: Sendable {
     }
 
     private static func category(from row: Row) -> ClipCategory {
-        ClipCategory(id: row["id"], name: row["name"], colorHex: row["colorHex"], position: row["position"])
+        ClipCategory(id: row["id"], name: row["name"], colorHex: row["colorHex"], position: row["position"], icon: row["icon"])
     }
 
     /// Moves a clip to the top after it was pasted.
@@ -463,6 +470,11 @@ public final class ClipStore: Sendable {
         migrator.registerMigration("v6 link titles") { db in
             try db.alter(table: "clip") { t in
                 t.add(column: "linkTitle", .text)
+            }
+        }
+        migrator.registerMigration("v7 category icons") { db in
+            try db.alter(table: "category") { t in
+                t.add(column: "icon", .text)
             }
         }
         return migrator
