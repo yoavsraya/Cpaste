@@ -172,6 +172,35 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    private func exportCategories() -> String? {
+        guard let store else { return nil }
+        let panel = NSSavePanel()
+        panel.nameFieldStringValue = "Cpaste categories.cpaste"
+        guard panel.runModal() == .OK, let url = panel.url else { return nil }
+        do {
+            try store.exportArchive().write(to: url, options: .atomic)
+            return "Exported to \(url.lastPathComponent)."
+        } catch {
+            log.error("export failed: \(String(describing: error), privacy: .public)")
+            return "The export failed. \(error.localizedDescription)"
+        }
+    }
+
+    private func importCategories() -> String? {
+        guard let store else { return nil }
+        let panel = NSOpenPanel()
+        panel.message = "Choose a file exported from Cpaste."
+        guard panel.runModal() == .OK, let url = panel.url else { return nil }
+        do {
+            let count = try store.importArchive(try Data(contentsOf: url))
+            recognitionQueue.async { TextRecognizer.readPendingImages(in: store) }
+            return "Imported \(count == 1 ? "1 clip" : "\(count) clips") from \(url.lastPathComponent)."
+        } catch {
+            log.error("import failed: \(String(describing: error), privacy: .public)")
+            return "The import failed. \(error.localizedDescription)"
+        }
+    }
+
     private func usageSummary() -> String? {
         do {
             guard let usage = try store?.usage() else { return nil }
@@ -253,6 +282,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 retentionChanged: { [weak self] in self?.expireOldClips() },
                 eraseHistory: { [weak self] in self?.eraseHistory() },
                 usageSummary: { [weak self] in self?.usageSummary() },
+                exportCategories: { [weak self] in self?.exportCategories() },
+                importCategories: { [weak self] in self?.importCategories() },
                 updater: updater.isActive ? updater : nil
             )
             let window = NSWindow(contentViewController: NSHostingController(rootView: SettingsView(settings: settings, actions: actions)))

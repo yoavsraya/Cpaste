@@ -13,6 +13,9 @@ struct SettingsActions {
     var eraseHistory: () -> Void = {}
     /// A line such as "214 clips, 38 MB on disk", or nil when the store cannot be read.
     var usageSummary: () -> String? = { nil }
+    /// Each asks for a file, does the work, and returns a line to show, or nil when the user cancelled.
+    var exportCategories: () -> String? = { nil }
+    var importCategories: () -> String? = { nil }
     /// Nil in builds that cannot update themselves.
     var updater: UpdaterController?
 }
@@ -120,6 +123,7 @@ private struct GeneralPane: View {
     @State private var isConfirmingErase = false
     @State private var usage: String?
     @State private var checksForUpdates = false
+    @State private var transferResult: String?
 
     var body: some View {
         Form {
@@ -182,6 +186,17 @@ private struct GeneralPane: View {
                     Caption("Older clips are deleted, with their images. Pinned clips and clips in a category are kept forever.")
                     Spacer()
                     Button("Erase History…") { isConfirmingErase = true }
+                }
+            }
+            Section("Categories") {
+                HStack {
+                    Caption(transferResult ?? "Save every category and its clips to one file, to move them to another Mac or share them.")
+                    Spacer()
+                    Button("Export…") { transferResult = actions.exportCategories() ?? transferResult }
+                    Button("Import…") {
+                        transferResult = actions.importCategories() ?? transferResult
+                        usage = actions.usageSummary()
+                    }
                 }
             }
         }
