@@ -1,4 +1,6 @@
 import AppKit
+import ImageIO
+import UniformTypeIdentifiers
 import CpasteCore
 import SwiftUI
 import Testing
@@ -90,6 +92,59 @@ let rendersPreviews = ProcessInfo.processInfo.environment["CPASTE_RENDER"] != ni
     host.frame.size = CGSize(width: CardSize.medium.drawerWidth, height: 900)
     try snapshot("shelf-drawer-preview", appearance: .darkAqua)
     model.position = .bottom
+    host.frame.size = CGSize(width: 1900, height: CardSize.medium.shelfHeight)
+
+    // The README demo: a few real shelf states in a row, written as an animated GIF.
+    host.frame.size = CGSize(width: 1440, height: CardSize.medium.shelfHeight)
+    var frames: [CGImage] = []
+    func frame() throws {
+        host.layoutSubtreeIfNeeded()
+        RunLoop.main.run(until: Date().addingTimeInterval(0.3))
+        let bitmap = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+        host.cacheDisplay(in: host.bounds, to: bitmap)
+        let context = try #require(CGContext(data: nil, width: 1440, height: Int(CardSize.medium.shelfHeight), bitsPerComponent: 8,
+                                             bytesPerRow: 0, space: CGColorSpaceCreateDeviceRGB(),
+                                             bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+        context.setFillColor(NSColor(white: 0.16, alpha: 1).cgColor)
+        context.fill(CGRect(x: 0, y: 0, width: 1440, height: CardSize.medium.shelfHeight))
+        context.interpolationQuality = .high
+        context.draw(try #require(bitmap.cgImage), in: CGRect(x: 0, y: 0, width: 1440, height: CardSize.medium.shelfHeight))
+        frames.append(try #require(context.makeImage()))
+    }
+    let everything = model.clips
+    for index in [0, 1, 2, 3] {
+        model.select(at: index)
+        try frame()
+    }
+    model.query = "kamala"
+    model.clips = try store.search("kamala", in: .all, limit: 200)
+    model.select(at: 0)
+    try frame()
+    model.query = ""
+    model.filter = .category(links.id)
+    model.clips = try store.search("", in: .category(links.id), limit: 200)
+    try frame()
+    model.filter = .all
+    model.clips = everything
+    model.select(at: 1)
+    model.toggleMark(at: 3)
+    model.toggleMark(at: 4)
+    try frame()
+    model.select(at: 0)
+    model.editor = .composing
+    model.editDraft = "Wi-Fi password is on the fridge"
+    model.focusToken += 1
+    try frame()
+    model.editor = nil
+
+    let gifURL = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+        .appendingPathComponent("../../docs/demo.gif").standardizedFileURL
+    let gif = try #require(CGImageDestinationCreateWithURL(gifURL as CFURL, UTType.gif.identifier as CFString, frames.count, nil))
+    CGImageDestinationSetProperties(gif, [kCGImagePropertyGIFDictionary: [kCGImagePropertyGIFLoopCount: 0]] as CFDictionary)
+    for image in frames {
+        CGImageDestinationAddImage(gif, image, [kCGImagePropertyGIFDictionary: [kCGImagePropertyGIFDelayTime: 1.4]] as CFDictionary)
+    }
+    #expect(CGImageDestinationFinalize(gif))
     host.frame.size = CGSize(width: 1900, height: CardSize.medium.shelfHeight)
 
     model.editor = .editing(model.clips[0])

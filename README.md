@@ -6,6 +6,8 @@ Cpaste remembers everything you copy on your Mac, so you can paste it again late
 
 Press **Cmd+1** and a shelf slides up with your recent copies, text and images. Pick one and press Return to paste it.
 
+![Cpaste in use: moving between clips, searching, opening a category, selecting several clips and typing a new one](docs/demo.gif)
+
 - It is free.
 - Everything stays on your Mac. Cpaste has no account. The only time it goes online is to ask GitHub whether a newer version exists, and you can turn that off.
 - It works on macOS 14 or later.
@@ -46,7 +48,7 @@ Copy things the way you always do. Cpaste records them in the background.
 | Give a clip a name | **Cmd+R**, or right-click and choose **Rename…** |
 | Edit the text of a clip | **Cmd+E**, then **Cmd+Return** to save |
 | Pin a clip to the front | **Cmd+P** |
-| Show only one type, or one app | The filter button next to the search field |
+| Show only one type, or one app, or your most used clips | The filter button next to the search field |
 | Find a screenshot by its text | Type a word that appears in it |
 | Select several clips | **Cmd+click** each one |
 | Delete the selected clips | **Cmd+Delete** |
@@ -70,6 +72,8 @@ A clip in a category is never deleted automatically. Click a category to see onl
 
 Drag a clip onto another clip to move it there. A new copy still lands at the front.
 
+Right-click a category to give it an emoji icon, or to make it **private**. A private category shows a lock, and its clips stay hidden, also from search, until you unlock it with Touch ID or your Mac password. It locks again each time the shelf closes.
+
 A pinned clip stays at the front and is never deleted automatically, even outside a category.
 
 ### Settings
@@ -77,13 +81,14 @@ A pinned clip stays at the front and is never deleted automatically, even outsid
 Click the Cpaste icon in the menu bar and choose **Settings…**.
 
 **General**
+- **Status** shows at a glance whether recording, pasting, updates and the history are working.
 - **Open at login** starts Cpaste whenever you turn on your Mac.
 - **Paste items** chooses what Return does. *To active app* pastes for you. *To clipboard* only copies the clip, and you press Cmd+V yourself.
 - **Position** puts the shelf along the bottom of the screen, or as a drawer on the right side with the clips in a column.
 - **Card size** makes the cards small, medium or large.
 - **Keep history** sets how long clips outside a category are kept, from one day to forever.
 - **History size** shows how many clips you have and how much disk they use.
-- **Export…** and **Import…** save every category with its clips to one file and read it back, to move them to another Mac or share them. Copied files are left out, because a file path means nothing on another Mac.
+- **Export…** and **Import…** save every category with its clips to one file and read it back, to move them to another Mac or share them. Copied files and private categories are left out.
 - **Erase History…** deletes every clip that is not pinned or in a category.
 
 **Privacy**
