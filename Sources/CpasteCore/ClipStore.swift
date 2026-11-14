@@ -144,6 +144,19 @@ public final class ClipStore: Sendable {
         }
     }
 
+    /// Moves a category into the place of another one, shifting the ones in between.
+    public func moveCategory(id: Int64, toPlaceOf targetID: Int64) throws {
+        try database.write { db in
+            var ids = try Int64.fetchAll(db, sql: "SELECT id FROM category ORDER BY position, id")
+            guard let from = ids.firstIndex(of: id), let to = ids.firstIndex(of: targetID), from != to else { return }
+            ids.remove(at: from)
+            ids.insert(id, at: to)
+            for (position, id) in ids.enumerated() {
+                try db.execute(sql: "UPDATE category SET position = ? WHERE id = ?", arguments: [position, id])
+            }
+        }
+    }
+
     /// Deletes a category. Its clips go back to unsaved history.
     public func deleteCategory(id: Int64) throws {
         try database.write { db in

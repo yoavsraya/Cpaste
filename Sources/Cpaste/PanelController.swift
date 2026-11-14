@@ -54,7 +54,10 @@ final class PanelController: NSObject, NSWindowDelegate {
             beginEditing: { [weak self] in self?.beginEditing($0) },
             commitEdit: { [weak self] in self?.commitEdit() },
             cancelEdit: { [weak self] in self?.endEditing() },
-            setPinned: { [weak self] clips, isPinned in self?.setPinned(clips, to: isPinned) }
+            setPinned: { [weak self] clips, isPinned in self?.setPinned(clips, to: isPinned) },
+            moveCategory: { [weak self] category, targetID in
+                self?.change("move the category") { try $0.moveCategory(id: category.id, toPlaceOf: targetID) }
+            }
         )
         panel.contentView = NSHostingView(rootView: ShelfView(model: model, imageFiles: store.imageFiles, actions: actions))
     }

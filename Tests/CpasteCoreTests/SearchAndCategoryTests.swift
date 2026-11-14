@@ -111,3 +111,14 @@ func awkwardQueriesDoNotThrow(query: String) throws {
     #expect(try store.search("", in: .all, limit: 10).count == 4)
     #expect(fileCount(in: store.imageFiles.directory.appendingPathComponent("images")) == 0)
 }
+
+@Test func movingACategoryTakesThePlaceOfItsTarget() throws {
+    let store = try makeStore()
+    let ids = try ["Links", "Numbers", "Work", "Travel"].map { try store.createCategory(name: $0, colorHex: "#4C8DF6").id }
+    try store.moveCategory(id: ids[0], toPlaceOf: ids[2])
+    #expect(try store.categories().map(\.name) == ["Numbers", "Work", "Links", "Travel"])
+    try store.moveCategory(id: ids[3], toPlaceOf: ids[1])
+    #expect(try store.categories().map(\.name) == ["Travel", "Numbers", "Work", "Links"])
+    try store.moveCategory(id: ids[1], toPlaceOf: ids[1])
+    #expect(try store.categories().map(\.name) == ["Travel", "Numbers", "Work", "Links"])
+}

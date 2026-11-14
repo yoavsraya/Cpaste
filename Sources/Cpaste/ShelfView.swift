@@ -27,8 +27,13 @@ final class ShelfModel {
     var editError: String?
     var canPasteDirectly = true
     var errorMessage: String?
-    /// The clip being dragged inside the shelf, read when it is dropped on a category.
-    var draggedClip: Clip?
+    /// What is being dragged inside the shelf, read when it is dropped on a category.
+    var dragged: Dragged?
+
+    enum Dragged: Equatable {
+        case clip(Clip)
+        case category(ClipCategory)
+    }
     /// Bumped whenever keyboard focus should return to the text field in use.
     var focusToken = 0
 
@@ -84,6 +89,7 @@ struct ShelfActions {
     var commitEdit: () -> Void = {}
     var cancelEdit: () -> Void = {}
     var setPinned: ([Clip], Bool) -> Void = { _, _ in }
+    var moveCategory: (ClipCategory, _ toPlaceOf: Int64) -> Void = { _, _ in }
 }
 
 enum CategoryPalette {
@@ -177,6 +183,10 @@ struct ShelfView: View {
                 chip(title: "Clipboard", color: nil, filter: .all)
                 ForEach(model.categories) { category in
                     chip(title: category.name, color: Color(hex: category.colorHex), filter: .category(category.id))
+                        .onDrag {
+                            model.dragged = .category(category)
+                            return Self.dragProvider(id: category.id)
+                        }
                         .contextMenu {
                             Button("Rename…") { actions.beginNaming(.rename(category)) }
                             Menu("Colour") {
@@ -205,35 +215,35 @@ struct ShelfView: View {
     }
 
     private func chip(title: String, color: Color?, filter: ClipFilter) -> some View {
-        Button {
+        HStack(spacing: 6) {
+            if let color {
+                Circle().fill(color).frame(width: 10, height: 10)
+            } else {
+                Image(systemName: "clock.arrow.circlepath").font(.system(size: 12))
+            }
+            Text(title).font(.system(size: 13, weight: .medium)).lineLimit(1)
+        }
+        .padding(.horizontal, 11).frame(height: 28)
+        .background(model.filter == filter ? .white.opacity(0.15) : .clear, in: Capsule())
+        .overlay(Capsule().strokeBorder(Color.accentColor, lineWidth: dropTarget == filter ? 2 : 0))
+        .contentShape(Capsule())
+        // A tap gesture and not a Button, because a Button takes the mouse press and the chip could not be dragged.
+        .onTapGesture {
             model.filter = filter
             actions.reload()
-        } label: {
-            HStack(spacing: 6) {
-                if let color {
-                    Circle().fill(color).frame(width: 10, height: 10)
-                } else {
-                    Image(systemName: "clock.arrow.circlepath").font(.system(size: 12))
-                }
-                Text(title).font(.system(size: 13, weight: .medium)).lineLimit(1)
-            }
-            .padding(.horizontal, 11).frame(height: 28)
-            .background(model.filter == filter ? .white.opacity(0.15) : .clear, in: Capsule())
-            .overlay(Capsule().strokeBorder(Color.accentColor, lineWidth: dropTarget == filter ? 2 : 0))
-            .contentShape(Capsule())
         }
-        .buttonStyle(.plain)
         .onDrop(of: [.cpasteClip], isTargeted: Binding(
             get: { dropTarget == filter },
             set: { targeted in
                 if targeted { dropTarget = filter } else if dropTarget == filter { dropTarget = nil }
             }
         )) { _ in
-            guard let clip = model.draggedClip else { return false }
-            model.draggedClip = nil
-            switch filter {
-            case .category(let id): actions.assign(model.targets(for: clip), id)
-            case .all: actions.assign(model.targets(for: clip), nil)
+            defer { model.dragged = nil }
+            switch (model.dragged, filter) {
+            case (.clip(let clip), .category(let id)): actions.assign(model.targets(for: clip), id)
+            case (.clip(let clip), .all): actions.assign(model.targets(for: clip), nil)
+            case (.category(let category), .category(let id)): actions.moveCategory(category, id)
+            case (.category, .all), (nil, _): return false
             }
             return true
         }
@@ -289,13 +299,8 @@ struct ShelfView: View {
                             })
                             .contextMenu { cardMenu(for: clip) }
                             .onDrag {
-                                model.draggedClip = clip
-                                let provider = NSItemProvider()
-                                provider.registerDataRepresentation(forTypeIdentifier: UTType.cpasteClip.identifier, visibility: .ownProcess) { completion in
-                                    completion(Data("\(clip.id)".utf8), nil)
-                                    return nil
-                                }
-                                return provider
+                                model.dragged = .clip(clip)
+                                return Self.dragProvider(id: clip.id)
                             }
                     }
                 }
@@ -306,6 +311,16 @@ struct ShelfView: View {
                 withAnimation(.easeOut(duration: 0.12)) { proxy.scrollTo(model.clips[selection].id, anchor: nil) }
             }
         }
+    }
+
+    /// The dragged item itself travels in `model.dragged`, and the provider only marks the drag as one of ours.
+    private static func dragProvider(id: Int64) -> NSItemProvider {
+        let provider = NSItemProvider()
+        provider.registerDataRepresentation(forTypeIdentifier: UTType.cpasteClip.identifier, visibility: .ownProcess) { completion in
+            completion(Data("\(id)".utf8), nil)
+            return nil
+        }
+        return provider
     }
 
     @ViewBuilder private func cardMenu(for clip: Clip) -> some View {
@@ -517,7 +532,7 @@ extension Clip {
 }
 
 extension UTType {
-    /// A clip dragged inside the shelf. Declared in Info.plist.
+    /// A clip or a category dragged inside the shelf. Declared in Info.plist.
     static let cpasteClip = UTType(exportedAs: "local.cpaste.clip")
 }
 
