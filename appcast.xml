@@ -3,6 +3,30 @@
     <channel>
         <title>Cpaste</title>
         <item>
+            <title>0.1.7</title>
+            <pubDate>Sun, 15 Nov 2026 00:17:50 +0200</pubDate>
+            <link>https://github.com/yoavsraya/Cpaste/releases</link>
+            <sparkle:version>48</sparkle:version>
+            <sparkle:shortVersionString>0.1.7</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description sparkle:format="markdown"><![CDATA[## New
+- **New clip.** Type a clip by hand with Cmd+N, the pencil button, or **New Clip…** in the menu-bar menu.
+- **Undo delete.** Press Cmd+Z after a delete, while the shelf is still open.
+- **Merge clips.** Select several text clips and press Cmd+J to combine them into one.
+- **Copy text from an image.** Shift+Cmd+C copies the words Cpaste read in a screenshot.
+- **Pause recording** from the menu-bar menu, for 5 minutes, an hour, or until you resume.
+- **Export and import.** Save every category with its clips to one file, in Settings.
+- **Shelf on the right.** Choose a side drawer in Settings, General, Shelf.
+- **Slide animation** when the shelf opens and closes.
+- Long text fades out on its card and says how many lines are hidden.
+
+## Install
+Already on 0.1.6? Choose **Check for Updates…** in the Cpaste menu. Otherwise download `Cpaste.zip` below and follow the README. Apple Silicon Macs only.
+]]></description>
+            <enclosure url="https://github.com/yoavsraya/Cpaste/releases/download/v0.1.7/Cpaste.zip" length="3311331" type="application/octet-stream" sparkle:edSignature="GqKP3+FnELcOzjK9IkPxkszUMzdpYvR5xoceprMIR2w7bNp3azCsvQKDri/BXAMbBA4PeZGfQlUPqJ8aLmMuDQ=="/>
+        </item>
+        <item>
             <title>0.1.6</title>
             <pubDate>Sat, 14 Nov 2026 19:59:08 +0200</pubDate>
             <link>https://github.com/yoavsraya/Cpaste/releases</link>
