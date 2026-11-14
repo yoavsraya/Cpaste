@@ -35,6 +35,7 @@ final class ShelfModel {
     }
     var kindFilter: ClipKind?
     var appFilter: String?
+    var order: ClipOrder = .shelf
     /// The apps offered in the filter menu.
     var sourceApps: [String] = []
     var naming: Naming?
@@ -246,8 +247,13 @@ struct ShelfView: View {
     }
 
     private var filterMenu: some View {
-        let isFiltering = model.kindFilter != nil || model.appFilter != nil
+        let isFiltering = model.kindFilter != nil || model.appFilter != nil || model.order != .shelf
         return Menu {
+            Picker("Order", selection: $model.order) {
+                Text("Newest first").tag(ClipOrder.shelf)
+                Text("Most used first").tag(ClipOrder.mostUsed)
+            }
+            .pickerStyle(.inline)
             Picker("Type", selection: $model.kindFilter) {
                 Text("All types").tag(ClipKind?.none)
                 ForEach(ClipKind.allCases, id: \.self) { Text($0.filterTitle).tag(ClipKind?.some($0)) }
@@ -262,7 +268,7 @@ struct ShelfView: View {
             HStack(spacing: 5) {
                 Image(systemName: isFiltering ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
                 if isFiltering {
-                    Text([model.kindFilter?.filterTitle, model.appFilter.map(SourceApp.name(bundleID:))]
+                    Text([model.order == .mostUsed ? "Most used" : nil, model.kindFilter?.filterTitle, model.appFilter.map(SourceApp.name(bundleID:))]
                         .compactMap { $0 }.joined(separator: " · "))
                         .lineLimit(1)
                 }
@@ -276,6 +282,7 @@ struct ShelfView: View {
         .help("Show only one type of clip, or clips from one app")
         .onChange(of: model.kindFilter) { actions.reload() }
         .onChange(of: model.appFilter) { actions.reload() }
+        .onChange(of: model.order) { actions.reload() }
     }
 
     private var chips: some View {
@@ -670,8 +677,14 @@ struct ClipCard: View {
         }
     }
 
-    /// The grey line under the content. Nil when the content already says everything.
+    /// The grey line under the content, with the paste count once the clip has been used more than once.
     private var detail: String? {
+        guard clip.useCount > 1 else { return contentDetail }
+        return [contentDetail, "used \(clip.useCount)×"].compactMap { $0 }.joined(separator: " · ")
+    }
+
+    /// Nil when the content already says everything.
+    private var contentDetail: String? {
         switch (clip.content, flavor) {
         case (.text, .color), (.link, _), (.file, _): return nil
         case (.text(let string), .code):

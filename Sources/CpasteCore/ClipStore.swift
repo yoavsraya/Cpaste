@@ -71,7 +71,7 @@ public final class ClipStore: Sendable {
     /// Clips in `filter` whose text has a word starting with every word of `query`, newest first. An empty query matches all.
     /// `kind` and `sourceBundleID` narrow the result to one clip type and one source app.
     public func search(_ query: String, in filter: ClipFilter, kind: ClipKind? = nil, sourceBundleID: String? = nil,
-                       limit: Int) throws -> [Clip] {
+                       order: ClipOrder = .shelf, limit: Int) throws -> [Clip] {
         var conditions: [String] = []
         var arguments: [(any DatabaseValueConvertible)?] = []
         if let kind {
@@ -106,7 +106,8 @@ public final class ClipStore: Sendable {
         let filterSQL = conditions.isEmpty ? "" : "WHERE " + conditions.joined(separator: " AND ")
         arguments.append(limit)
         return try database.read { db in
-            try Row.fetchAll(db, sql: "SELECT * FROM clip \(filterSQL) ORDER BY isPinned DESC, position DESC, id DESC LIMIT ?",
+            let orderSQL = order == .shelf ? "isPinned DESC, position DESC, id DESC" : "useCount DESC, position DESC, id DESC"
+            return try Row.fetchAll(db, sql: "SELECT * FROM clip \(filterSQL) ORDER BY \(orderSQL) LIMIT ?",
                              arguments: StatementArguments(arguments))
                 .map(Self.clip(from:))
         }
@@ -327,7 +328,7 @@ public final class ClipStore: Sendable {
     /// Moves a clip to the top after it was pasted.
     public func markUsed(id: Int64, at date: Date = Date()) throws {
         try database.write { db in
-            try db.execute(sql: "UPDATE clip SET lastUsedAt = ?, position = \(Self.frontPosition) WHERE id = ?", arguments: [date, id])
+            try db.execute(sql: "UPDATE clip SET lastUsedAt = ?, useCount = useCount + 1, position = \(Self.frontPosition) WHERE id = ?", arguments: [date, id])
         }
     }
 
@@ -402,7 +403,7 @@ public final class ClipStore: Sendable {
         }
         return Clip(id: id, content: content, contentHash: row["contentHash"], sourceBundleID: row["sourceBundleID"],
                     copiedAt: row["copiedAt"], lastUsedAt: row["lastUsedAt"], categoryID: row["categoryID"], imageText: content.kind == .image ? text : nil,
-                    title: row["title"], isPinned: row["isPinned"])
+                    title: row["title"], isPinned: row["isPinned"], useCount: row["useCount"])
     }
 
     private static var migrator: DatabaseMigrator {
@@ -449,6 +450,11 @@ public final class ClipStore: Sendable {
         migrator.registerMigration("v4 clip titles") { db in
             try db.alter(table: "clip") { t in
                 t.add(column: "title", .text)
+            }
+        }
+        migrator.registerMigration("v5 use counts") { db in
+            try db.alter(table: "clip") { t in
+                t.add(column: "useCount", .integer).notNull().defaults(to: 0)
             }
         }
         return migrator

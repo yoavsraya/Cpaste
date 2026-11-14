@@ -247,3 +247,20 @@ private func texts(_ store: ClipStore) throws -> [String] {
     #expect(try store.add(text: "https://www.booking.com").content == .link(URL(string: "https://www.booking.com")!))
     #expect(try store.search("fridge", in: .all, limit: 10).count == 1)
 }
+
+@Test func pastingCountsUsesAndMostUsedListsThemFirst() throws {
+    let store = try makeStore()
+    let start = Date(timeIntervalSince1970: 1_000)
+    let address = try store.insert(.text("address"), sourceBundleID: nil, at: start)
+    let iban = try store.insert(.text("iban"), sourceBundleID: nil, at: start.addingTimeInterval(1))
+    try store.insert(.text("never pasted"), sourceBundleID: nil, at: start.addingTimeInterval(2))
+    for _ in 0..<3 { try store.markUsed(id: address.id) }
+    try store.markUsed(id: iban.id)
+
+    let mostUsed = try store.search("", in: .all, order: .mostUsed, limit: 10)
+    #expect(mostUsed.map(\.useCount) == [3, 1, 0])
+    #expect(mostUsed.map(\.id).prefix(2) == [address.id, iban.id])
+    // Copying the same thing again is not a use.
+    try store.insert(.text("address"), sourceBundleID: nil)
+    #expect(try store.search("address", in: .all, limit: 1).first?.useCount == 3)
+}

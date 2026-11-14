@@ -36,6 +36,15 @@ public struct Clip: Equatable, Sendable, Identifiable {
     public var title: String?
     /// A pinned clip sorts before the others and never expires.
     public var isPinned: Bool
+    /// How many times the clip was pasted or copied out of the shelf.
+    public var useCount: Int
+}
+
+/// The order clips are listed in.
+public enum ClipOrder: String, CaseIterable, Sendable {
+    /// Pinned clips, then the newest or the manually placed.
+    case shelf
+    case mostUsed
 }
 
 // Named ClipCategory because Foundation re-exports the Objective-C runtime's `Category` type.

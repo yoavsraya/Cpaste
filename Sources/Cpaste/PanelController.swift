@@ -89,6 +89,7 @@ final class PanelController: NSObject, NSWindowDelegate {
         model.filter = .all
         model.kindFilter = nil
         model.appFilter = nil
+        model.order = .shelf
         model.naming = nil
         model.editor = nil
         model.cardSize = settings.cardSize
@@ -177,7 +178,7 @@ final class PanelController: NSObject, NSWindowDelegate {
             }
             model.sourceApps = try store.sourceBundleIDs()
             model.clips = try store.search(model.query, in: model.filter, kind: model.kindFilter,
-                                           sourceBundleID: model.appFilter, limit: 200)
+                                           sourceBundleID: model.appFilter, order: model.order, limit: 200)
             model.errorMessage = nil
         } catch {
             log.error("cannot load clips: \(String(describing: error), privacy: .public)")
