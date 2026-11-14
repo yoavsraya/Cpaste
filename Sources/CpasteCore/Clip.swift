@@ -32,6 +32,8 @@ public struct Clip: Equatable, Sendable, Identifiable {
     public var categoryID: Int64?
     /// The text read from an image clip. Nil for other clips and for images that are not read yet.
     public var imageText: String?
+    /// The title of the page a link clip points at, when the browser gave one.
+    public var linkTitle: String?
     /// A name the user gave the clip, shown on its card in place of its type.
     public var title: String?
     /// A pinned clip sorts before the others and never expires.

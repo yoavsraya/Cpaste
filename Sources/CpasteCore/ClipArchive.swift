@@ -21,6 +21,7 @@ public struct ClipArchive: Codable, Equatable, Sendable {
         /// The PNG bytes of an image clip.
         public var image: Data?
         public var title: String?
+        public var linkTitle: String?
         public var isPinned: Bool
         public var sourceBundleID: String?
     }
@@ -48,6 +49,7 @@ extension ClipStore {
                 // A copied file is only a path, which means nothing on another Mac, so it is left out.
                 if clip.content.kind == .file { return nil }
                 var item = ClipArchive.Item(kind: clip.content.kind, title: clip.title, isPinned: clip.isPinned, sourceBundleID: clip.sourceBundleID)
+                item.linkTitle = clip.linkTitle
                 switch clip.content {
                 case .text(let string): item.text = string
                 case .link(let url): item.text = url.absoluteString
@@ -74,7 +76,7 @@ extension ClipStore {
             // Reversed, because each insert goes to the front and the file lists the front clip first.
             for item in category.clips.reversed() {
                 guard let capture = item.capture else { continue }
-                let clip = try insert(capture, sourceBundleID: item.sourceBundleID)
+                let clip = try insert(capture, sourceBundleID: item.sourceBundleID, linkTitle: item.linkTitle)
                 try setCategory(clipIDs: [clip.id], to: categoryID)
                 if let title = item.title { try rename(clipID: clip.id, to: title) }
                 if item.isPinned { try setPinned(clipIDs: [clip.id], to: true) }
@@ -87,7 +89,7 @@ extension ClipStore {
 
 extension ClipArchive.Item {
     init(kind: ClipKind, title: String?, isPinned: Bool, sourceBundleID: String?) {
-        self.init(kind: kind, text: nil, image: nil, title: title, isPinned: isPinned, sourceBundleID: sourceBundleID)
+        self.init(kind: kind, text: nil, image: nil, title: title, linkTitle: nil, isPinned: isPinned, sourceBundleID: sourceBundleID)
     }
 
     /// Nil when the item lacks the data its kind needs, and for kinds that are never imported.

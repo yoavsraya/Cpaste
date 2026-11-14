@@ -41,7 +41,9 @@ let rendersPreviews = ProcessInfo.processInfo.environment["CPASTE_RENDER"] != ni
         (.link(URL(string: "https://github.com/yoavsraya/Cpaste/releases")!), "com.apple.Safari", -100),
     ]
     for (capture, source, offset) in samples {
-        try store.insert(capture, sourceBundleID: source, at: now.addingTimeInterval(offset))
+        let isBooking = capture == .link(URL(string: "https://www.booking.com/city/th/phuket.html")!)
+        try store.insert(capture, sourceBundleID: source, linkTitle: isBooking ? "Hotels in Phuket, Thailand" : nil,
+                         at: now.addingTimeInterval(offset))
     }
 
     let links = try store.createCategory(name: "Useful Links", colorHex: "#F0605D")

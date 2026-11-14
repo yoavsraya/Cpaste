@@ -264,3 +264,15 @@ private func texts(_ store: ClipStore) throws -> [String] {
     try store.insert(.text("address"), sourceBundleID: nil)
     #expect(try store.search("address", in: .all, limit: 1).first?.useCount == 3)
 }
+
+@Test func aLinkKeepsItsPageTitleAndIsFoundByIt() throws {
+    let store = try makeStore()
+    let url = URL(string: "https://www.booking.com/city/th/phuket.html")!
+    let clip = try store.insert(.link(url), sourceBundleID: "com.google.Chrome", linkTitle: "Hotels in Phuket, Thailand")
+    #expect(clip.linkTitle == "Hotels in Phuket, Thailand")
+    #expect(try store.search("hotels thailand", in: .all, limit: 10).map(\.id) == [clip.id])
+    // Copying the same link again without a title keeps the one already known.
+    #expect(try store.insert(.link(url), sourceBundleID: nil).linkTitle == "Hotels in Phuket, Thailand")
+    // A title belongs to links only.
+    #expect(try store.insert(.text("Nai Harn"), sourceBundleID: nil, linkTitle: "ignored").linkTitle == nil)
+}

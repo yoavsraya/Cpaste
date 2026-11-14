@@ -633,10 +633,15 @@ struct ClipCard: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(host.prefix(1).uppercased()).font(.system(size: 13, weight: .bold)).foregroundStyle(.white)
                     .frame(width: 26, height: 26).background(headerColor, in: Circle()).padding(.bottom, 6)
-                Text(host).font(.system(size: 15, weight: .semibold)).lineLimit(2)
                 let rest = url.path + (url.query.map { "?\($0)" } ?? "")
-                if rest.count > 1 {
-                    Text(rest).font(.system(size: 11.5)).foregroundStyle(.secondary)
+                if let title = clip.linkTitle {
+                    Text(title).font(.system(size: 14, weight: .semibold)).lineLimit(3)
+                    Text(host + (rest.count > 1 ? rest : "")).font(.system(size: 11.5)).foregroundStyle(.secondary).lineLimit(1)
+                } else {
+                    Text(host).font(.system(size: 15, weight: .semibold)).lineLimit(2)
+                    if rest.count > 1 {
+                        Text(rest).font(.system(size: 11.5)).foregroundStyle(.secondary)
+                    }
                 }
             }
             .padding(12)

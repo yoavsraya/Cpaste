@@ -96,12 +96,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let queue = storeQueue
         let recognitionQueue = recognitionQueue
         let settings = settings
-        let monitor = PasteboardMonitor { capture, sourceBundleID in
+        let monitor = PasteboardMonitor { capture, sourceBundleID, linkTitle in
             if let sourceBundleID, settings.ignoredBundleIDs.contains(sourceBundleID) { return }
             // Encoding a large screenshot takes long enough to stall the menu bar, so it runs off the main thread.
             queue.async {
                 do {
-                    let clip = try store.insert(capture, sourceBundleID: sourceBundleID)
+                    let clip = try store.insert(capture, sourceBundleID: sourceBundleID, linkTitle: linkTitle)
                     if case .image = clip.content {
                         recognitionQueue.async { TextRecognizer.readPendingImages(in: store) }
                     }

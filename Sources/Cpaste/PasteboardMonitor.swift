@@ -4,13 +4,13 @@ import CpasteCore
 @MainActor
 final class PasteboardMonitor {
     private let pasteboard = NSPasteboard.general
-    private let onCapture: (Capture, _ sourceBundleID: String?) -> Void
+    private let onCapture: (Capture, _ sourceBundleID: String?, _ linkTitle: String?) -> Void
     private var lastChangeCount: Int
     private var timer: Timer?
     /// While true, copies are seen and dropped, so nothing made during a pause is recorded later.
     var isPaused = false
 
-    init(onCapture: @escaping (Capture, _ sourceBundleID: String?) -> Void) {
+    init(onCapture: @escaping (Capture, _ sourceBundleID: String?, _ linkTitle: String?) -> Void) {
         self.onCapture = onCapture
         lastChangeCount = pasteboard.changeCount
     }
@@ -34,6 +34,15 @@ final class PasteboardMonitor {
         let types = Set((pasteboard.types ?? []).map(\.rawValue))
         let pasteboard = pasteboard
         guard let capture = classify(types: types, read: { pasteboard.data(forType: .init($0)) }) else { return }
-        onCapture(capture, NSWorkspace.shared.frontmostApplication?.bundleIdentifier)
+        let source = NSWorkspace.shared.frontmostApplication
+        onCapture(capture, source?.bundleIdentifier, linkTitle(for: capture, from: source))
+    }
+
+    /// The page title of a copied link, from the clipboard when the browser put it there, otherwise from the browser's front tab.
+    private func linkTitle(for capture: Capture, from source: NSRunningApplication?) -> String? {
+        guard case .link(let url) = capture else { return nil }
+        let named = pasteboard.string(forType: .init("public.url-name"))?.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let named, !named.isEmpty, named != url.absoluteString { return named }
+        return source.flatMap { BrowserTab.title(showing: url, in: $0) }
     }
 }

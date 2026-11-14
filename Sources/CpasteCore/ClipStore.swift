@@ -37,19 +37,21 @@ public final class ClipStore: Sendable {
 
     /// Stores a capture. Content already in the store is moved to the top instead of duplicated.
     @discardableResult
-    public func insert(_ capture: Capture, sourceBundleID: String?, at date: Date = Date()) throws -> Clip {
+    public func insert(_ capture: Capture, sourceBundleID: String?, linkTitle: String? = nil, at date: Date = Date()) throws -> Clip {
         let content = try content(for: capture)
         let columns = Columns(content)
         return try database.write { db in
             let row = try Row.fetchOne(db, sql: """
                 INSERT INTO clip (kind, text, imageHash, pixelWidth, pixelHeight, byteCount,
-                                  contentHash, sourceBundleID, copiedAt, lastUsedAt, position)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, \(Self.frontPosition))
-                ON CONFLICT (contentHash) DO UPDATE SET lastUsedAt = excluded.lastUsedAt, position = excluded.position
+                                  contentHash, sourceBundleID, copiedAt, lastUsedAt, linkTitle, position)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, \(Self.frontPosition))
+                ON CONFLICT (contentHash) DO UPDATE SET lastUsedAt = excluded.lastUsedAt, position = excluded.position,
+                    linkTitle = COALESCE(excluded.linkTitle, clip.linkTitle)
                 RETURNING *
                 """, arguments: [
                     columns.kind, columns.text, columns.imageHash, columns.pixelWidth, columns.pixelHeight,
                     columns.byteCount, columns.contentHash, sourceBundleID, date, date,
+                    columns.kind == "link" ? linkTitle : nil,
                 ])!
             return try Self.clip(from: row)
         }
@@ -95,10 +97,11 @@ public final class ClipStore: Sendable {
             // Images have no text, so typing "image" is the way to find them.
             let wantsImages = words.count == 1 && words[0].count >= 2 && "image".hasPrefix(words[0].lowercased())
             // A title is short, so it is matched word by word without the index.
-            let titleMatch = words.map { _ in "instr(lower(title), lower(?)) > 0" }.joined(separator: " AND ")
+            let titleMatch = words.map { _ in "instr(lower(COALESCE(title, '') || ' ' || COALESCE(linkTitle, '')), lower(?)) > 0" }
+                .joined(separator: " AND ")
             conditions.append("""
                 (id IN (SELECT rowid FROM clip_fts WHERE clip_fts MATCH ?)\(wantsImages ? " OR kind = 'image'" : "") \
-                OR (title IS NOT NULL AND \(titleMatch)))
+                OR ((title IS NOT NULL OR linkTitle IS NOT NULL) AND \(titleMatch)))
                 """)
             arguments.append(match)
             arguments.append(contentsOf: words.map { String($0) })
@@ -402,7 +405,7 @@ public final class ClipStore: Sendable {
         default: throw ClipStoreError.malformedRow(id: id)
         }
         return Clip(id: id, content: content, contentHash: row["contentHash"], sourceBundleID: row["sourceBundleID"],
-                    copiedAt: row["copiedAt"], lastUsedAt: row["lastUsedAt"], categoryID: row["categoryID"], imageText: content.kind == .image ? text : nil,
+                    copiedAt: row["copiedAt"], lastUsedAt: row["lastUsedAt"], categoryID: row["categoryID"], imageText: content.kind == .image ? text : nil, linkTitle: row["linkTitle"],
                     title: row["title"], isPinned: row["isPinned"], useCount: row["useCount"])
     }
 
@@ -455,6 +458,11 @@ public final class ClipStore: Sendable {
         migrator.registerMigration("v5 use counts") { db in
             try db.alter(table: "clip") { t in
                 t.add(column: "useCount", .integer).notNull().defaults(to: 0)
+            }
+        }
+        migrator.registerMigration("v6 link titles") { db in
+            try db.alter(table: "clip") { t in
+                t.add(column: "linkTitle", .text)
             }
         }
         return migrator
