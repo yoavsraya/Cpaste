@@ -1,0 +1,26 @@
+<?xml version="1.0" standalone="yes"?>
+<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
+    <channel>
+        <title>Cpaste</title>
+        <item>
+            <title>0.1.6</title>
+            <pubDate>Sat, 14 Nov 2026 19:59:08 +0200</pubDate>
+            <link>https://github.com/yoavsraya/Cpaste/releases</link>
+            <sparkle:version>39</sparkle:version>
+            <sparkle:shortVersionString>0.1.6</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description sparkle:format="markdown"><![CDATA[## New
+- **Updates inside the app.** Cpaste checks once a day and shows **Update to Cpaste…** in its menu when a new version is out. One click installs it. Turn the check off in Settings, General.
+- **Smarter cards.** A link shows its site name. A colour code shows a swatch. Commands and code use a monospace font. An image fills the card and shows a few words read from it. A file shows its Finder icon and size.
+
+## Updating from 0.1.5 or older
+Download `Cpaste.zip` below and replace the app by hand one last time. From this version on, updates arrive inside Cpaste.
+
+## Install
+Download `Cpaste.zip` below and follow the README. Apple Silicon Macs only.
+]]></description>
+            <enclosure url="https://github.com/yoavsraya/Cpaste/releases/download/v0.1.6/Cpaste.zip" length="3230513" type="application/octet-stream" sparkle:edSignature="K4yNgt/u8DQYPa0OMI5SyIyK5XEynQsjd/zZW/1RdNaBWDT3uwTI006rFEx9S100d1hvOAaNSubQAN7n6ZjQAg=="/>
+        </item>
+    </channel>
+</rss>
