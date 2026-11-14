@@ -43,9 +43,9 @@ public enum ClipArchiveError: Error, LocalizedError {
 extension ClipKind: Codable {}
 
 extension ClipStore {
-    /// Every category with the clips saved in it, in shelf order.
+    /// Every category with the clips saved in it, in shelf order. Private categories are left out.
     public func exportArchive() throws -> Data {
-        let categories = try self.categories().map { category in
+        let categories = try self.categories().filter { !$0.isPrivate }.map { category in
             ClipArchive.Category(name: category.name, colorHex: category.colorHex, icon: category.icon, clips: try search("", in: .category(category.id), limit: .max).compactMap { clip in
                 // A copied file is only a path, which means nothing on another Mac, so it is left out.
                 if clip.content.kind == .file { return nil }

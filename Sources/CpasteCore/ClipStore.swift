@@ -72,10 +72,15 @@ public final class ClipStore: Sendable {
 
     /// Clips in `filter` whose text has a word starting with every word of `query`, newest first. An empty query matches all.
     /// `kind` and `sourceBundleID` narrow the result to one clip type and one source app.
+    /// Clips saved in a category listed in `hiding` are left out, which is how locked private categories stay unseen.
     public func search(_ query: String, in filter: ClipFilter, kind: ClipKind? = nil, sourceBundleID: String? = nil,
-                       order: ClipOrder = .shelf, limit: Int) throws -> [Clip] {
+                       order: ClipOrder = .shelf, hiding hiddenCategoryIDs: Set<Int64> = [], limit: Int) throws -> [Clip] {
         var conditions: [String] = []
         var arguments: [(any DatabaseValueConvertible)?] = []
+        if !hiddenCategoryIDs.isEmpty {
+            // The ids are integers from the store itself, so they are safe to write into the statement.
+            conditions.append("(categoryID IS NULL OR categoryID NOT IN (\(hiddenCategoryIDs.map(String.init).joined(separator: ", "))))")
+        }
         if let kind {
             conditions.append("kind = ?")
             arguments.append(kind.rawValue)
@@ -249,6 +254,12 @@ public final class ClipStore: Sendable {
         }
     }
 
+    public func setCategoryPrivate(id: Int64, to isPrivate: Bool) throws {
+        try database.write { db in
+            try db.execute(sql: "UPDATE category SET isPrivate = ? WHERE id = ?", arguments: [isPrivate, id])
+        }
+    }
+
     /// Sets the emoji shown next to the category's name. Nil removes it.
     public func setCategoryIcon(id: Int64, to icon: String?) throws {
         try database.write { db in
@@ -332,7 +343,7 @@ public final class ClipStore: Sendable {
     }
 
     private static func category(from row: Row) -> ClipCategory {
-        ClipCategory(id: row["id"], name: row["name"], colorHex: row["colorHex"], position: row["position"], icon: row["icon"])
+        ClipCategory(id: row["id"], name: row["name"], colorHex: row["colorHex"], position: row["position"], icon: row["icon"], isPrivate: row["isPrivate"])
     }
 
     /// Moves a clip to the top after it was pasted.
@@ -475,6 +486,11 @@ public final class ClipStore: Sendable {
         migrator.registerMigration("v7 category icons") { db in
             try db.alter(table: "category") { t in
                 t.add(column: "icon", .text)
+            }
+        }
+        migrator.registerMigration("v8 private categories") { db in
+            try db.alter(table: "category") { t in
+                t.add(column: "isPrivate", .boolean).notNull().defaults(to: false)
             }
         }
         return migrator

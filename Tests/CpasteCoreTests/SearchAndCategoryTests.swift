@@ -137,3 +137,22 @@ func awkwardQueriesDoNotThrow(query: String) throws {
     #expect(try store.search("", in: .all, kind: .file, limit: 10).isEmpty)
     #expect(try store.sourceBundleIDs() == ["com.apple.Notes", "com.google.Chrome"])
 }
+
+@Test func clipsOfAHiddenCategoryAreLeftOutOfEveryList() throws {
+    let store = try makeStore()
+    let secrets = try store.createCategory(name: "Private", colorHex: "#8E99A4")
+    let work = try store.createCategory(name: "Work", colorHex: "#4CC764")
+    let hidden = try store.insert(.text("door code 4821"), sourceBundleID: nil)
+    let saved = try store.insert(.text("standup notes"), sourceBundleID: nil)
+    let loose = try store.insert(.text("door is open"), sourceBundleID: nil)
+    try store.setCategory(clipIDs: [hidden.id], to: secrets.id)
+    try store.setCategory(clipIDs: [saved.id], to: work.id)
+    try store.setCategoryPrivate(id: secrets.id, to: true)
+    #expect(try store.categories().map(\.isPrivate) == [true, false])
+
+    let locked: Set<Int64> = [secrets.id]
+    #expect(Set(try store.search("", in: .all, hiding: locked, limit: 10).map(\.id)) == [saved.id, loose.id])
+    #expect(try store.search("door", in: .all, hiding: locked, limit: 10).map(\.id) == [loose.id])
+    #expect(try store.search("door", in: .all, order: .mostUsed, hiding: locked, limit: 10).map(\.id) == [loose.id])
+    #expect(try store.search("door", in: .all, limit: 10).count == 2)
+}

@@ -1,4 +1,5 @@
 import AppKit
+import LocalAuthentication
 import QuartzCore
 import Carbon.HIToolbox
 import CpasteCore
@@ -23,6 +24,7 @@ final class PanelController: NSObject, NSWindowDelegate {
     private var lastDeleted: DeletedClips?
     /// True while the shelf slides away, when it is still on screen but already closed to the user.
     private var isClosing = false
+    private var isAuthenticating = false
 
     /// `onPasted` runs after a clip was written to the clipboard and before Command-V is sent.
     init(store: ClipStore, settings: AppSettings, onPasted: @escaping (Clip) -> Void) {
@@ -52,11 +54,23 @@ final class PanelController: NSObject, NSWindowDelegate {
             delete: { [weak self] in self?.delete($0) },
             beginNaming: { [weak self] in self?.beginNaming($0) },
             deleteCategory: { [weak self] category in
-                self?.change("delete the category") { try $0.deleteCategory(id: category.id) }
+                // Deleting a category returns its clips to the open history, so a private one needs proof first.
+                self?.afterUnlocking(category, reason: "delete the private category “\(category.name)”") {
+                    self?.change("delete the category") { try $0.deleteCategory(id: category.id) }
+                }
             },
             recolor: { [weak self] category, colorHex in
                 self?.change("recolour the category") { try $0.recolorCategory(id: category.id, to: colorHex) }
             },
+            setPrivate: { [weak self] category, isPrivate in
+                let update = { self?.change("change the category") { try $0.setCategoryPrivate(id: category.id, to: isPrivate) } }
+                if isPrivate {
+                    _ = update()
+                } else {
+                    self?.afterUnlocking(category, reason: "make “\(category.name)” public") { _ = update() }
+                }
+            },
+            showFilter: { [weak self] in self?.show($0) },
             setIcon: { [weak self] category, icon in
                 self?.change("set the category icon") { try $0.setCategoryIcon(id: category.id, to: icon) }
             },
@@ -93,6 +107,7 @@ final class PanelController: NSObject, NSWindowDelegate {
         model.kindFilter = nil
         model.appFilter = nil
         model.order = .shelf
+        model.unlocked = []
         model.naming = nil
         model.editor = nil
         model.cardSize = settings.cardSize
@@ -170,7 +185,41 @@ final class PanelController: NSObject, NSWindowDelegate {
     }
 
     func windowDidResignKey(_ notification: Notification) {
-        close()
+        // The Touch ID dialog takes the keyboard, and the shelf must still be there when it is done.
+        if !isAuthenticating { close() }
+    }
+
+    // MARK: Private categories
+
+    private func show(_ filter: ClipFilter) {
+        guard case .category(let id) = filter, let category = model.categories.first(where: { $0.id == id }) else {
+            model.filter = filter
+            return reload()
+        }
+        afterUnlocking(category, reason: "show the private category “\(category.name)”") { [weak self] in
+            self?.model.filter = filter
+            self?.reload()
+        }
+    }
+
+    /// Runs `action` at once for an open category, and after Touch ID or the login password for a locked private one.
+    private func afterUnlocking(_ category: ClipCategory, reason: String, _ action: @escaping @MainActor () -> Void) {
+        guard category.isPrivate, !model.unlocked.contains(category.id) else { return action() }
+        isAuthenticating = true
+        let context = LAContext()
+        context.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: reason) { [weak self] success, error in
+            Task { @MainActor in
+                guard let self else { return }
+                self.isAuthenticating = false
+                self.panel.makeKey()
+                if success {
+                    self.model.unlocked.insert(category.id)
+                    action()
+                } else {
+                    log.notice("private category stays locked: \(String(describing: error), privacy: .public)")
+                }
+            }
+        }
     }
 
     private func reload() {
@@ -181,7 +230,8 @@ final class PanelController: NSObject, NSWindowDelegate {
             }
             model.sourceApps = try store.sourceBundleIDs()
             model.clips = try store.search(model.query, in: model.filter, kind: model.kindFilter,
-                                           sourceBundleID: model.appFilter, order: model.order, limit: 200)
+                                           sourceBundleID: model.appFilter, order: model.order,
+                                           hiding: model.lockedCategoryIDs, limit: 200)
             model.errorMessage = nil
         } catch {
             log.error("cannot load clips: \(String(describing: error), privacy: .public)")
@@ -276,7 +326,9 @@ final class PanelController: NSObject, NSWindowDelegate {
     }
 
     private func cycleFilter(by delta: Int) {
-        let filters = [ClipFilter.all] + model.categories.map { .category($0.id) }
+        // A locked private category is skipped, since Tab should not raise a Touch ID dialog.
+        let locked = model.lockedCategoryIDs
+        let filters = [ClipFilter.all] + model.categories.filter { !locked.contains($0.id) }.map { .category($0.id) }
         let current = filters.firstIndex(of: model.filter) ?? 0
         model.filter = filters[(current + delta + filters.count) % filters.count]
         reload()

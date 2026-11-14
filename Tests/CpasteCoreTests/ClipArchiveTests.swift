@@ -75,3 +75,12 @@ import Testing
     let archive = try JSONDecoder().decode(ClipArchive.self, from: try store.exportArchive())
     #expect(archive.categories.flatMap(\.clips).map(\.kind) == [.text])
 }
+
+@Test func privateCategoriesAreNotExported() throws {
+    let store = try makeStore()
+    let secrets = try store.createCategory(name: "Private", colorHex: "#8E99A4")
+    try store.setCategory(clipIDs: [try store.insert(.text("door code 4821"), sourceBundleID: nil).id], to: secrets.id)
+    try store.setCategoryPrivate(id: secrets.id, to: true)
+    let archive = try JSONDecoder().decode(ClipArchive.self, from: try store.exportArchive())
+    #expect(archive.categories.isEmpty)
+}

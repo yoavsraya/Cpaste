@@ -36,6 +36,13 @@ final class ShelfModel {
     var kindFilter: ClipKind?
     var appFilter: String?
     var order: ClipOrder = .shelf
+    /// Private categories the user has opened since the shelf appeared.
+    var unlocked: Set<Int64> = []
+
+    /// The private categories whose clips must not be shown.
+    var lockedCategoryIDs: Set<Int64> {
+        Set(categories.filter { $0.isPrivate && !unlocked.contains($0.id) }.map(\.id))
+    }
     /// The apps offered in the filter menu.
     var sourceApps: [String] = []
     var naming: Naming?
@@ -114,6 +121,9 @@ struct ShelfActions {
     var beginNaming: (ShelfModel.Naming) -> Void = { _ in }
     var deleteCategory: (ClipCategory) -> Void = { _ in }
     var recolor: (ClipCategory, _ colorHex: String) -> Void = { _, _ in }
+    var setPrivate: (ClipCategory, Bool) -> Void = { _, _ in }
+    /// Switches the shelf to a category, asking for Touch ID first when it is private and locked.
+    var showFilter: (ClipFilter) -> Void = { _ in }
     var setIcon: (ClipCategory, _ icon: String?) -> Void = { _, _ in }
     var beginEditing: (Clip) -> Void = { _ in }
     var commitEdit: () -> Void = {}
@@ -296,7 +306,8 @@ struct ShelfView: View {
                 chip(title: "Clipboard", color: nil, filter: .all)
                 ForEach(model.categories) { category in
                     chip(title: [category.icon, category.name].compactMap { $0 }.joined(separator: " "),
-                         color: Color(hex: category.colorHex), filter: .category(category.id))
+                         color: Color(hex: category.colorHex), filter: .category(category.id),
+                         lock: !category.isPrivate ? nil : model.unlocked.contains(category.id) ? "lock.open.fill" : "lock.fill")
                         .onDrag {
                             model.dragged = .category(category)
                             return Self.dragProvider(id: category.id)
@@ -317,6 +328,9 @@ struct ShelfView: View {
                                     }
                                 }
                             }
+                            Button(category.isPrivate ? "Make Public…" : "Make Private") {
+                                actions.setPrivate(category, !category.isPrivate)
+                            }
                             Menu("Icon") {
                                 Button("None") { actions.setIcon(category, nil) }
                                 ForEach(CategoryIcons.all, id: \.self) { icon in
@@ -334,7 +348,7 @@ struct ShelfView: View {
         }
     }
 
-    private func chip(title: String, color: Color?, filter: ClipFilter) -> some View {
+    private func chip(title: String, color: Color?, filter: ClipFilter, lock: String? = nil) -> some View {
         HStack(spacing: 6) {
             if let color {
                 Circle().fill(color).frame(width: 10, height: 10)
@@ -342,16 +356,16 @@ struct ShelfView: View {
                 Image(systemName: "clock.arrow.circlepath").font(.system(size: 12))
             }
             Text(title).font(.system(size: 13, weight: .medium)).lineLimit(1)
+            if let lock {
+                Image(systemName: lock).font(.system(size: 10)).foregroundStyle(.secondary)
+            }
         }
         .padding(.horizontal, 11).frame(height: 28)
         .background(model.filter == filter ? Color.primary.opacity(0.15) : .clear, in: Capsule())
         .overlay(Capsule().strokeBorder(Color.accentColor, lineWidth: dropTarget == filter ? 2 : 0))
         .contentShape(Capsule())
         // A tap gesture and not a Button, because a Button takes the mouse press and the chip could not be dragged.
-        .onTapGesture {
-            model.filter = filter
-            actions.reload()
-        }
+        .onTapGesture { actions.showFilter(filter) }
         .onDrop(of: [.cpasteClip], isTargeted: Binding(
             get: { dropTarget == filter },
             set: { targeted in

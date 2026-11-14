@@ -57,6 +57,8 @@ public struct ClipCategory: Equatable, Sendable, Identifiable {
     public var position: Int
     /// An emoji shown next to the name.
     public var icon: String?
+    /// The clips of a private category stay hidden until the user proves who they are.
+    public var isPrivate: Bool
 }
 
 public enum ClipFilter: Equatable, Sendable {
