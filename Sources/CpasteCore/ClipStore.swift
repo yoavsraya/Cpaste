@@ -73,12 +73,15 @@ public final class ClipStore: Sendable {
         }
     }
 
-    public func delete(clipID: Int64) throws {
-        let imageHash = try database.write { db in
-            try Row.fetchOne(db, sql: "DELETE FROM clip WHERE id = ? RETURNING imageHash", arguments: [clipID])
-                .flatMap { $0["imageHash"] as String? }
+    /// Deletes the clips in one transaction, so a failure leaves all of them in place.
+    public func delete(clipIDs: [Int64]) throws {
+        let imageHashes = try database.write { db in
+            try clipIDs.compactMap { id in
+                try Row.fetchOne(db, sql: "DELETE FROM clip WHERE id = ? RETURNING imageHash", arguments: [id])
+                    .flatMap { $0["imageHash"] as String? }
+            }
         }
-        if let imageHash { try imageFiles.remove(sha256: imageHash) }
+        for imageHash in imageHashes { try imageFiles.remove(sha256: imageHash) }
     }
 
     // MARK: Categories
@@ -122,9 +125,11 @@ public final class ClipStore: Sendable {
     }
 
     /// Saves a clip to a category, or with nil returns it to unsaved history.
-    public func setCategory(clipID: Int64, to categoryID: Int64?) throws {
+    public func setCategory(clipIDs: [Int64], to categoryID: Int64?) throws {
         try database.write { db in
-            try db.execute(sql: "UPDATE clip SET categoryID = ? WHERE id = ?", arguments: [categoryID, clipID])
+            for id in clipIDs {
+                try db.execute(sql: "UPDATE clip SET categoryID = ? WHERE id = ?", arguments: [categoryID, id])
+            }
         }
     }
 

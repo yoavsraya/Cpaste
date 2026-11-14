@@ -8,13 +8,15 @@ import UniformTypeIdentifiers
 @Observable
 final class ShelfModel {
     enum Naming: Equatable {
-        case new(assignTo: Clip?)
+        case new(assignTo: [Clip])
         case rename(ClipCategory)
     }
 
     var clips: [Clip] = []
     var categories: [ClipCategory] = []
     var selection = 0
+    /// Clips picked with Command-click. While it is empty, the clip at `selection` is the only selected one.
+    var marked: Set<Int64> = []
     var query = ""
     var filter: ClipFilter = .all
     var naming: Naming?
@@ -25,6 +27,43 @@ final class ShelfModel {
     var draggedClip: Clip?
     /// Bumped whenever keyboard focus should return to the text field in use.
     var focusToken = 0
+
+    var selectedClips: [Clip] {
+        if marked.isEmpty { return clips.indices.contains(selection) ? [clips[selection]] : [] }
+        return clips.filter { marked.contains($0.id) }
+    }
+
+    func isSelected(at index: Int) -> Bool {
+        marked.isEmpty ? index == selection : marked.contains(clips[index].id)
+    }
+
+    /// The clips an action started on `clip` applies to, which is the whole selection when `clip` is part of it.
+    func targets(for clip: Clip) -> [Clip] {
+        let selected = selectedClips
+        return selected.contains { $0.id == clip.id } ? selected : [clip]
+    }
+
+    func select(at index: Int) {
+        marked = []
+        selection = index
+    }
+
+    /// Command-click. Adds the clip to the selection, or takes it out when it is already there.
+    func toggleMark(at index: Int) {
+        guard clips.indices.contains(index) else { return }
+        var ids = Set(selectedClips.map(\.id))
+        let id = clips[index].id
+        if ids.remove(id) == nil {
+            ids.insert(id)
+            selection = index
+        } else if let remaining = clips.firstIndex(where: { ids.contains($0.id) }) {
+            if !ids.contains(clips[selection].id) { selection = remaining }
+        } else {
+            // The last selected clip cannot be deselected, because the keyboard always needs a clip to act on.
+            return
+        }
+        marked = ids.count > 1 ? ids : []
+    }
 }
 
 @MainActor
@@ -32,8 +71,8 @@ struct ShelfActions {
     var paste: (Clip) -> Void = { _ in }
     var requestDirectPaste: () -> Void = {}
     var reload: () -> Void = {}
-    var assign: (Clip, _ categoryID: Int64?) -> Void = { _, _ in }
-    var delete: (Clip) -> Void = { _ in }
+    var assign: ([Clip], _ categoryID: Int64?) -> Void = { _, _ in }
+    var delete: ([Clip]) -> Void = { _ in }
     var beginNaming: (ShelfModel.Naming) -> Void = { _ in }
     var deleteCategory: (ClipCategory) -> Void = { _ in }
     var recolor: (ClipCategory, _ colorHex: String) -> Void = { _, _ in }
@@ -102,7 +141,9 @@ struct ShelfView: View {
                 chips
             }
             Spacer(minLength: 8)
-            Text("drag onto a category or ⌘S to save    ⌘⌫ delete    ⇥ next category")
+            Text(model.marked.isEmpty
+                 ? "⌘click to select more    drag onto a category or ⌘S to save    ⌘⌫ delete"
+                 : "\(model.marked.count) selected    drag onto a category or ⌘S to save    ⌘⌫ delete")
                 .font(.system(size: 11)).foregroundStyle(.secondary).lineLimit(1)
         }
         .padding(.horizontal, 16).padding(.top, 12).padding(.bottom, 8)
@@ -128,7 +169,7 @@ struct ShelfView: View {
                             Button("Delete category", role: .destructive) { actions.deleteCategory(category) }
                         }
                 }
-                Button { actions.beginNaming(.new(assignTo: nil)) } label: {
+                Button { actions.beginNaming(.new(assignTo: [])) } label: {
                     Image(systemName: "plus").font(.system(size: 13, weight: .medium)).frame(width: 28, height: 28)
                 }
                 .buttonStyle(.plain).help("New category")
@@ -164,8 +205,8 @@ struct ShelfView: View {
             guard let clip = model.draggedClip else { return false }
             model.draggedClip = nil
             switch filter {
-            case .category(let id): actions.assign(clip, id)
-            case .all: actions.assign(clip, nil)
+            case .category(let id): actions.assign(model.targets(for: clip), id)
+            case .all: actions.assign(model.targets(for: clip), nil)
             }
             return true
         }
@@ -189,10 +230,12 @@ struct ShelfView: View {
                 LazyHStack(spacing: 12) {
                     ForEach(Array(model.clips.enumerated()), id: \.element.id) { index, clip in
                         let category = model.categories.first { $0.id == clip.categoryID }
-                        ClipCard(clip: clip, category: category, imageFiles: imageFiles, isSelected: index == model.selection)
+                        ClipCard(clip: clip, category: category, imageFiles: imageFiles, isSelected: model.isSelected(at: index))
                             .id(clip.id)
                             .onTapGesture(count: 2) { actions.paste(clip) }
-                            .onTapGesture { model.selection = index }
+                            .onTapGesture {
+                                if NSEvent.modifierFlags.contains(.command) { model.toggleMark(at: index) } else { model.select(at: index) }
+                            }
                             .contextMenu { cardMenu(for: clip) }
                             .onDrag {
                                 model.draggedClip = clip
@@ -215,18 +258,22 @@ struct ShelfView: View {
     }
 
     @ViewBuilder private func cardMenu(for clip: Clip) -> some View {
-        Button("Paste") { actions.paste(clip) }
-        Menu("Save to") {
-            ForEach(model.categories) { category in
-                Button(category.name) { actions.assign(clip, category.id) }
-            }
-            Button("New category…") { actions.beginNaming(.new(assignTo: clip)) }
+        let targets = model.targets(for: clip)
+        let many = targets.count > 1
+        if !many {
+            Button("Paste") { actions.paste(clip) }
         }
-        if clip.categoryID != nil {
-            Button("Remove from category") { actions.assign(clip, nil) }
+        Menu(many ? "Save \(targets.count) clips to" : "Save to") {
+            ForEach(model.categories) { category in
+                Button(category.name) { actions.assign(targets, category.id) }
+            }
+            Button("New category…") { actions.beginNaming(.new(assignTo: targets)) }
+        }
+        if targets.contains(where: { $0.categoryID != nil }) {
+            Button("Remove from category") { actions.assign(targets, nil) }
         }
         Divider()
-        Button("Delete", role: .destructive) { actions.delete(clip) }
+        Button(many ? "Delete \(targets.count) clips" : "Delete", role: .destructive) { actions.delete(targets) }
     }
 
     private func notice(_ text: String) -> some View {

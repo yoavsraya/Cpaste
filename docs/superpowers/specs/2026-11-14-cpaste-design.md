@@ -10,6 +10,7 @@ UI options for the panel are in `ui-options.html` next to this file, published a
 - Handles plain text, links, images, and copied files. A link is text that parses as a URL. A copied file is stored as its path.
 - Opens a floating panel on Cmd+1 over the current app. The shortcut is configurable.
 - Left and right arrows move the selection. Return pastes the selected clip into the app you came from. Cmd+2 to Cmd+9 paste by position while the panel is open. Cmd+1 closes it.
+- Cmd+click adds a clip to the selection or takes it out. Save, drag to a category, and delete act on every selected clip. Return still pastes one clip.
 - Typing filters clips by their text. A clip matches when it has a word starting with each word typed. Images match the word "image".
 - Categories hold saved clips. Dragging a clip onto a category saves it there, and so does Cmd+S. Dragging it onto Clipboard returns it to history. A saved clip is drawn with its header and frame in the category colour, and the colour is chosen from a fixed list. A clip belongs to at most one category.
 - Unsaved history expires after 30 days by default. Saved clips never expire.

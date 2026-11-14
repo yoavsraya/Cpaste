@@ -62,7 +62,7 @@ func awkwardQueriesDoNotThrow(query: String) throws {
     let links = try store.createCategory(name: "Useful Links", colorHex: "#F0605D")
     let numbers = try store.createCategory(name: "מספרים חשובים", colorHex: "#4C8DF6")
     let link = try #require(try store.search("booking", in: .all, limit: 1).first)
-    try store.setCategory(clipID: link.id, to: links.id)
+    try store.setCategory(clipIDs: [link.id], to: links.id)
 
     #expect(try store.categories().map(\.name) == ["Useful Links", "מספרים חשובים"])
     #expect(texts(try store.search("", in: .category(links.id), limit: 10)) == ["https://www.booking.com/city/th/phuket.html"])
@@ -74,7 +74,7 @@ func awkwardQueriesDoNotThrow(query: String) throws {
     let store = try seededStore()
     let category = try store.createCategory(name: "Work", colorHex: "#4CC764")
     let clip = try #require(try store.search("kamala", in: .all, limit: 1).first)
-    try store.setCategory(clipID: clip.id, to: category.id)
+    try store.setCategory(clipIDs: [clip.id], to: category.id)
     try store.deleteCategory(id: category.id)
 
     #expect(try store.categories().isEmpty)
@@ -85,7 +85,7 @@ func awkwardQueriesDoNotThrow(query: String) throws {
     let store = try seededStore()
     let category = try store.createCategory(name: "Work", colorHex: "#4CC764")
     let clip = try #require(try store.search("kamala", in: .all, limit: 1).first)
-    try store.setCategory(clipID: clip.id, to: category.id)
+    try store.setCategory(clipIDs: [clip.id], to: category.id)
     try store.expire(olderThan: .distantFuture)
     #expect(texts(try store.search("", in: .all, limit: 10)) == ["kamala beach estate"])
 }
@@ -107,7 +107,7 @@ func awkwardQueriesDoNotThrow(query: String) throws {
 @Test func deletingAnImageClipRemovesItsFiles() throws {
     let store = try seededStore()
     let image = try #require(try store.search("image", in: .all, limit: 1).first)
-    try store.delete(clipID: image.id)
+    try store.delete(clipIDs: [image.id])
     #expect(try store.search("", in: .all, limit: 10).count == 4)
     #expect(fileCount(in: store.imageFiles.directory.appendingPathComponent("images")) == 0)
 }

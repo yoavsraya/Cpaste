@@ -40,7 +40,7 @@ final class PanelController: NSObject, NSWindowDelegate {
                 Paster.requestDirectPaste()
             },
             reload: { [weak self] in self?.reload() },
-            assign: { [weak self] clip, categoryID in self?.assign(clip, to: categoryID) },
+            assign: { [weak self] clips, categoryID in self?.assign(clips, to: categoryID) },
             delete: { [weak self] in self?.delete($0) },
             beginNaming: { [weak self] in self?.beginNaming($0) },
             deleteCategory: { [weak self] category in
@@ -101,7 +101,7 @@ final class PanelController: NSObject, NSWindowDelegate {
             model.clips = []
             model.errorMessage = "Cpaste could not read its history. \(error.localizedDescription)"
         }
-        model.selection = 0
+        model.select(at: 0)
     }
 
     /// Runs a change to the store and redraws. A failure is shown in the shelf.
@@ -135,8 +135,8 @@ final class PanelController: NSObject, NSWindowDelegate {
         case kVK_Tab: cycleFilter(by: event.modifierFlags.contains(.shift) ? -1 : 1)
         case kVK_Escape:
             if model.query.isEmpty { close() } else { model.query = "" }
-        case kVK_ANSI_S where command: selectedClip.map(showSaveMenu)
-        case kVK_Delete where command: selectedClip.map(delete)
+        case kVK_ANSI_S where command: showSaveMenu(for: model.selectedClips)
+        case kVK_Delete where command: delete(model.selectedClips)
         default:
             guard command, let digit = event.characters(byApplyingModifiers: []).flatMap(Int.init),
                   (1...9).contains(digit), model.clips.indices.contains(digit - 1)
@@ -152,7 +152,7 @@ final class PanelController: NSObject, NSWindowDelegate {
 
     private func move(by delta: Int) {
         if let moved = movedSelection(from: model.selection, by: delta, count: model.clips.count) {
-            model.selection = moved
+            model.select(at: moved)
         }
     }
 
@@ -183,34 +183,34 @@ final class PanelController: NSObject, NSWindowDelegate {
         }
     }
 
-    private func assign(_ clip: Clip, to categoryID: Int64?) {
-        change("save the clip") { try $0.setCategory(clipID: clip.id, to: categoryID) }
+    private func assign(_ clips: [Clip], to categoryID: Int64?) {
+        change("save the clips") { try $0.setCategory(clipIDs: clips.map(\.id), to: categoryID) }
     }
 
-    private func delete(_ clip: Clip) {
+    private func delete(_ clips: [Clip]) {
         let selection = model.selection
-        change("delete the clip") { try $0.delete(clipID: clip.id) }
+        change("delete the clips") { try $0.delete(clipIDs: clips.map(\.id)) }
         model.selection = movedSelection(from: selection, by: 0, count: model.clips.count) ?? 0
     }
 
     // MARK: Categories
 
-    private func showSaveMenu(for clip: Clip) {
+    private func showSaveMenu(for clips: [Clip]) {
+        guard !clips.isEmpty else { return }
         let menu = NSMenu()
-        for category in model.categories {
-            let item = menu.addItem(withTitle: category.name, action: #selector(saveMenuPicked(_:)), keyEquivalent: "")
+        func add(_ title: String, _ target: SavePick.Target) -> NSMenuItem {
+            let item = menu.addItem(withTitle: title, action: #selector(saveMenuPicked(_:)), keyEquivalent: "")
             item.target = self
-            item.representedObject = SavePick(clip: clip, target: .category(category.id))
-            item.state = clip.categoryID == category.id ? .on : .off
+            item.representedObject = SavePick(clips: clips, target: target)
+            return item
+        }
+        for category in model.categories {
+            add(category.name, .category(category.id)).state = clips.allSatisfy { $0.categoryID == category.id } ? .on : .off
         }
         if !model.categories.isEmpty { menu.addItem(.separator()) }
-        let new = menu.addItem(withTitle: "New category…", action: #selector(saveMenuPicked(_:)), keyEquivalent: "")
-        new.target = self
-        new.representedObject = SavePick(clip: clip, target: .newCategory)
-        if clip.categoryID != nil {
-            let remove = menu.addItem(withTitle: "Remove from category", action: #selector(saveMenuPicked(_:)), keyEquivalent: "")
-            remove.target = self
-            remove.representedObject = SavePick(clip: clip, target: .none)
+        _ = add("New category…", .newCategory)
+        if clips.contains(where: { $0.categoryID != nil }) {
+            _ = add("Remove from category", .none)
         }
         let origin = NSPoint(x: 16 + CGFloat(model.selection) * 40, y: Self.height - 60)
         menu.popUp(positioning: nil, at: origin, in: panel.contentView)
@@ -218,10 +218,10 @@ final class PanelController: NSObject, NSWindowDelegate {
 
     private final class SavePick {
         enum Target { case category(Int64), newCategory, none }
-        let clip: Clip
+        let clips: [Clip]
         let target: Target
-        init(clip: Clip, target: Target) {
-            self.clip = clip
+        init(clips: [Clip], target: Target) {
+            self.clips = clips
             self.target = target
         }
     }
@@ -229,9 +229,9 @@ final class PanelController: NSObject, NSWindowDelegate {
     @objc private func saveMenuPicked(_ item: NSMenuItem) {
         guard let pick = item.representedObject as? SavePick else { return }
         switch pick.target {
-        case .category(let id): assign(pick.clip, to: id)
-        case .none: assign(pick.clip, to: nil)
-        case .newCategory: beginNaming(.new(assignTo: pick.clip))
+        case .category(let id): assign(pick.clips, to: id)
+        case .none: assign(pick.clips, to: nil)
+        case .newCategory: beginNaming(.new(assignTo: pick.clips))
         }
     }
 
@@ -256,9 +256,9 @@ final class PanelController: NSObject, NSWindowDelegate {
         let color = CategoryPalette.colors[model.categories.count % CategoryPalette.colors.count].hex
         change("save the category") { store in
             switch naming {
-            case .new(let clip):
+            case .new(let clips):
                 let category = try store.createCategory(name: name, colorHex: color)
-                if let clip { try store.setCategory(clipID: clip.id, to: category.id) }
+                try store.setCategory(clipIDs: clips.map(\.id), to: category.id)
             case .rename(let category):
                 try store.renameCategory(id: category.id, to: name)
             }

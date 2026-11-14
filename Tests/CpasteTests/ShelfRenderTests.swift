@@ -31,12 +31,14 @@ import Testing
     let links = try store.createCategory(name: "Useful Links", colorHex: "#F0605D")
     try store.createCategory(name: "מספרים חשובים", colorHex: "#4C8DF6")
     try store.createCategory(name: "Work", colorHex: "#4CC764")
-    try store.setCategory(clipID: try #require(try store.search("booking", in: .all, limit: 1).first).id, to: links.id)
+    try store.setCategory(clipIDs: [try #require(try store.search("booking", in: .all, limit: 1).first).id], to: links.id)
 
     let model = ShelfModel()
     model.categories = try store.categories()
     model.clips = try store.search("", in: .all, limit: 200)
     model.selection = 1
+    model.toggleMark(at: 3)
+    model.toggleMark(at: 5)
     let view = ShelfView(model: model, imageFiles: store.imageFiles, actions: ShelfActions())
         .background(Color(white: 0.16))
     let host = NSHostingView(rootView: view)
