@@ -107,7 +107,7 @@ func awkwardQueriesDoNotThrow(query: String) throws {
 @Test func deletingAnImageClipRemovesItsFiles() throws {
     let store = try seededStore()
     let image = try #require(try store.search("image", in: .all, limit: 1).first)
-    try store.delete(clipIDs: [image.id])
+    try store.discard(try store.delete(clipIDs: [image.id]))
     #expect(try store.search("", in: .all, limit: 10).count == 4)
     #expect(fileCount(in: store.imageFiles.directory.appendingPathComponent("images")) == 0)
 }

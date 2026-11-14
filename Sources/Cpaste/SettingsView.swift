@@ -322,7 +322,10 @@ private struct ShortcutsPane: View {
                 LabeledContent("Rename a clip", value: "⌘R")
                 LabeledContent("Edit the text of a clip", value: "⌘E")
                 LabeledContent("Pin or unpin", value: "⌘P")
+                LabeledContent("Merge the selected clips into one", value: "⌘J")
+                LabeledContent("Copy the text in an image", value: "⇧⌘C")
                 LabeledContent("Delete", value: "⌘⌫")
+                LabeledContent("Undo a delete", value: "⌘Z")
                 LabeledContent("Next category", value: "⇥")
                 LabeledContent("Clear the search, then close", value: "esc")
             }

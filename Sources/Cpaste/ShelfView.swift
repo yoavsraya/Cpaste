@@ -38,6 +38,8 @@ final class ShelfModel {
     var editing: Clip?
     var editDraft = ""
     var editError: String?
+    /// Shown after a delete, while it can still be undone.
+    var undoHint: String?
     var canPasteDirectly = true
     var errorMessage: String?
     /// What is being dragged inside the shelf, read when it is dropped on a category.
@@ -106,6 +108,8 @@ struct ShelfActions {
     var setPinned: ([Clip], Bool) -> Void = { _, _ in }
     var moveCategory: (ClipCategory, _ toPlaceOf: Int64) -> Void = { _, _ in }
     var moveClip: (Clip, _ toPlaceOf: Clip) -> Void = { _, _ in }
+    var merge: ([Clip]) -> Void = { _ in }
+    var copyImageText: (Clip) -> Void = { _ in }
 }
 
 enum CategoryPalette {
@@ -188,9 +192,9 @@ struct ShelfView: View {
                 chips
             }
             Spacer(minLength: 8)
-            Text(model.marked.isEmpty
+            Text(model.undoHint ?? (model.marked.isEmpty
                  ? "⌘click select    ⌘S save    ⌘E edit    ⌘P pin    ⌘⌫ delete"
-                 : "\(model.marked.count) selected    ⌘S save    ⌘P pin    ⌘⌫ delete")
+                 : "\(model.marked.count) selected    ⌘S save    ⌘J merge    ⌘⌫ delete"))
                 .font(.system(size: 11)).foregroundStyle(.secondary).lineLimit(1)
         }
         .padding(.horizontal, 16).padding(.top, 12).padding(.bottom, 8)
@@ -424,10 +428,16 @@ struct ShelfView: View {
             if let title = clip.openTitle {
                 Button(title) { actions.open(clip) }
             }
+            if !(clip.imageText ?? "").isEmpty {
+                Button("Copy Text from Image") { actions.copyImageText(clip) }
+            }
             Button("Rename…") { actions.beginNaming(.renameClip(clip)) }
             if clip.isEditable {
                 Button("Edit…") { actions.beginEditing(clip) }
             }
+        }
+        if targets.filter(\.isEditable).count > 1 {
+            Button("Merge into One Clip") { actions.merge(targets) }
         }
         Menu(many ? "Save \(targets.count) clips to" : "Save to") {
             ForEach(model.categories) { category in

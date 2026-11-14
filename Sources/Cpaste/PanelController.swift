@@ -18,6 +18,8 @@ final class PanelController: NSObject, NSWindowDelegate {
     private let panel: NSPanel
     private let onPasted: (Clip) -> Void
     private var keyMonitor: Any?
+    /// The last delete, kept until the shelf closes or another delete replaces it, so Command-Z can undo it.
+    private var lastDeleted: DeletedClips?
 
     /// `onPasted` runs after a clip was written to the clipboard and before Command-V is sent.
     init(store: ClipStore, settings: AppSettings, onPasted: @escaping (Clip) -> Void) {
@@ -61,7 +63,9 @@ final class PanelController: NSObject, NSWindowDelegate {
             },
             moveClip: { [weak self] clip, target in
                 self?.change("move the clip") { try $0.moveClip(id: clip.id, toPlaceOf: target.id) }
-            }
+            },
+            merge: { [weak self] in self?.merge($0) },
+            copyImageText: { [weak self] in self?.copyImageText(of: $0) }
         )
         panel.contentView = NSHostingView(rootView: ShelfView(model: model, imageFiles: store.imageFiles, actions: actions))
     }
@@ -100,6 +104,7 @@ final class PanelController: NSObject, NSWindowDelegate {
         if let keyMonitor { NSEvent.removeMonitor(keyMonitor) }
         keyMonitor = nil
         panel.orderOut(nil)
+        forgetLastDelete()
     }
 
     func windowDidResignKey(_ notification: Notification) {
@@ -173,6 +178,9 @@ final class PanelController: NSObject, NSWindowDelegate {
             if model.query.isEmpty { close() } else { model.query = "" }
         case kVK_ANSI_S where command: showSaveMenu(for: model.selectedClips)
         case kVK_Delete where command: delete(model.selectedClips)
+        case kVK_ANSI_Z where command && lastDeleted != nil: undoDelete()
+        case kVK_ANSI_J where command: merge(model.selectedClips)
+        case kVK_ANSI_C where command && event.modifierFlags.contains(.shift): selectedClip.map(copyImageText)
         case kVK_ANSI_C where command: selectedClip.map { paste($0, into: .clipboard) }
         case kVK_ANSI_O where command: selectedClip.map(open)
         case kVK_ANSI_E where command: selectedClip.map(beginEditing)
@@ -245,9 +253,47 @@ final class PanelController: NSObject, NSWindowDelegate {
     }
 
     private func delete(_ clips: [Clip]) {
+        guard !clips.isEmpty else { return }
         let selection = model.selection
-        change("delete the clips") { try $0.delete(clipIDs: clips.map(\.id)) }
+        forgetLastDelete()
+        change("delete the clips") { lastDeleted = try $0.delete(clipIDs: clips.map(\.id)) }
         model.selection = movedSelection(from: selection, by: 0, count: model.clips.count) ?? 0
+        if let lastDeleted {
+            model.undoHint = "Deleted \(lastDeleted.count == 1 ? "1 clip" : "\(lastDeleted.count) clips")    ⌘Z undo"
+        }
+    }
+
+    private func undoDelete() {
+        guard let deleted = lastDeleted else { return }
+        lastDeleted = nil
+        model.undoHint = nil
+        change("bring the clips back") { try $0.restore(deleted) }
+    }
+
+    /// After this the last delete cannot be undone, and its image files are removed.
+    private func forgetLastDelete() {
+        model.undoHint = nil
+        guard let deleted = lastDeleted else { return }
+        lastDeleted = nil
+        do {
+            try store.discard(deleted)
+        } catch {
+            log.error("image files of deleted clips not removed: \(String(describing: error), privacy: .public)")
+        }
+    }
+
+    private func merge(_ clips: [Clip]) {
+        let texts = clips.compactMap(\.editableText)
+        guard texts.count > 1 else { return }
+        change("merge the clips") { try $0.insert(.text(texts.joined(separator: "\n")), sourceBundleID: nil) }
+    }
+
+    private func copyImageText(of clip: Clip) {
+        guard let text = clip.imageText, !text.isEmpty else { return }
+        // Written without telling the monitor to skip it, so the text is recorded as a new clip.
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(text, forType: .string)
+        close()
     }
 
     private func setPinned(_ clips: [Clip], to isPinned: Bool) {

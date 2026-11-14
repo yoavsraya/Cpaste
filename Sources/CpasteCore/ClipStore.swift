@@ -16,6 +16,13 @@ public enum ClipStoreError: Error, Equatable, LocalizedError {
     }
 }
 
+/// Clips removed by `ClipStore.delete`, kept so the delete can be undone.
+public struct DeletedClips: Sendable {
+    let rows: [[String: DatabaseValue]]
+
+    public var count: Int { rows.count }
+}
+
 public final class ClipStore: Sendable {
     public let imageFiles: ImageFiles
     private let database: DatabaseQueue
@@ -158,14 +165,51 @@ public final class ClipStore: Sendable {
     }
 
     /// Deletes the clips in one transaction, so a failure leaves all of them in place.
-    public func delete(clipIDs: [Int64]) throws {
-        let imageHashes = try database.write { db in
-            try clipIDs.compactMap { id in
-                try Row.fetchOne(db, sql: "DELETE FROM clip WHERE id = ? RETURNING imageHash", arguments: [id])
-                    .flatMap { $0["imageHash"] as String? }
+    /// Their image files stay on disk until `discard`, so the delete can be undone with `restore`.
+    @discardableResult
+    public func delete(clipIDs: [Int64]) throws -> DeletedClips {
+        try database.write { db in
+            DeletedClips(rows: try clipIDs.compactMap { id in
+                try Row.fetchOne(db, sql: "DELETE FROM clip WHERE id = ? RETURNING *", arguments: [id])
+                    .map { row in Dictionary(uniqueKeysWithValues: row.map { ($0.0, $0.1) }) }
+            })
+        }
+    }
+
+    /// Puts deleted clips back as they were. A clip whose content was copied again in the meantime is skipped.
+    public func restore(_ deleted: DeletedClips) throws {
+        try database.write { db in
+            for row in deleted.rows {
+                let columns = row.keys.sorted()
+                try db.execute(
+                    sql: "INSERT OR IGNORE INTO clip (\(columns.joined(separator: ", "))) VALUES (\(columns.map { _ in "?" }.joined(separator: ", ")))",
+                    arguments: StatementArguments(columns.map { row[$0] }))
             }
         }
-        for imageHash in imageHashes { try imageFiles.remove(sha256: imageHash) }
+    }
+
+    /// Gives up the chance to undo a delete, and removes the image files no clip uses any more.
+    public func discard(_ deleted: DeletedClips) throws {
+        let hashes = deleted.rows.compactMap { $0["imageHash"].flatMap { String.fromDatabaseValue($0) } }
+        for hash in hashes {
+            let inUse = try database.read { db in
+                try Bool.fetchOne(db, sql: "SELECT EXISTS (SELECT 1 FROM clip WHERE imageHash = ?)", arguments: [hash]) ?? false
+            }
+            if !inUse { try imageFiles.remove(sha256: hash) }
+        }
+    }
+
+    /// Removes image files that no clip points at, left behind when the app quit before a delete was discarded.
+    @discardableResult
+    public func removeOrphanedImages() throws -> Int {
+        let known = Set(try database.read { db in
+            try String.fetchAll(db, sql: "SELECT imageHash FROM clip WHERE imageHash IS NOT NULL")
+        })
+        let folder = imageFiles.directory.appendingPathComponent("images")
+        let onDisk = (try? FileManager.default.contentsOfDirectory(atPath: folder.path)) ?? []
+        let orphans = onDisk.map { ($0 as NSString).deletingPathExtension }.filter { !known.contains($0) }
+        for hash in orphans { try imageFiles.remove(sha256: hash) }
+        return orphans.count
     }
 
     // MARK: Categories

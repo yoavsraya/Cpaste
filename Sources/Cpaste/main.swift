@@ -33,7 +33,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             startMonitoring(into: store)
             startPanel(over: store)
             startExpiry()
-            recognitionQueue.async { TextRecognizer.readPendingImages(in: store) }
+            recognitionQueue.async {
+                do {
+                    let removed = try store.removeOrphanedImages()
+                    if removed > 0 { log.notice("removed \(removed) image files no clip uses") }
+                } catch {
+                    log.error("unused image files not removed: \(String(describing: error), privacy: .public)")
+                }
+                TextRecognizer.readPendingImages(in: store)
+            }
             if !settings.hasSeenWelcome { showWelcome() }
             updater.onAvailableVersionChange = { [weak self] version in
                 self?.updateMenuItem?.title = version.map { "Update to Cpaste \($0)…" } ?? "Check for Updates…"

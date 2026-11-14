@@ -203,3 +203,40 @@ private func texts(_ store: ClipStore) throws -> [String] {
     #expect(withImage.clipCount == 2)
     #expect(withImage.byteCount >= textOnly.byteCount + imageBytes)
 }
+
+@Test func aDeleteCanBeUndoneUntilItIsDiscarded() throws {
+    let store = try makeStore()
+    let category = try store.createCategory(name: "Work", colorHex: "#4CC764")
+    let text = try store.insert(.text("Nai Harn"), sourceBundleID: "com.apple.Notes")
+    let image = try store.insert(.image(pngData()), sourceBundleID: nil)
+    try store.setCategory(clipIDs: [text.id], to: category.id)
+    try store.rename(clipID: text.id, to: "Beach")
+    try store.setPinned(clipIDs: [text.id], to: true)
+    let before = try store.search("", in: .all, limit: 10)
+
+    let deleted = try store.delete(clipIDs: [text.id, image.id])
+    #expect(deleted.count == 2)
+    #expect(try store.search("", in: .all, limit: 10).isEmpty)
+
+    try store.restore(deleted)
+    #expect(try store.search("", in: .all, limit: 10) == before)
+    #expect(try store.search("beach", in: .all, limit: 10).map(\.id) == [text.id])
+    #expect(fileCount(in: store.imageFiles.directory.appendingPathComponent("images")) == 1)
+
+    // Discarding after an undo must not remove the file of the restored image.
+    try store.discard(deleted)
+    #expect(fileCount(in: store.imageFiles.directory.appendingPathComponent("images")) == 1)
+    try store.discard(try store.delete(clipIDs: [image.id]))
+    #expect(fileCount(in: store.imageFiles.directory.appendingPathComponent("images")) == 0)
+}
+
+@Test func imageFilesWithoutAClipAreRemoved() throws {
+    let store = try makeStore()
+    let kept = try store.insert(.image(pngData()), sourceBundleID: nil)
+    let lost = try store.insert(.image(pngData(width: 300, height: 200)), sourceBundleID: nil)
+    try store.delete(clipIDs: [lost.id])
+    #expect(try store.removeOrphanedImages() == 1)
+    #expect(fileCount(in: store.imageFiles.directory.appendingPathComponent("images")) == 1)
+    #expect(try store.search("", in: .all, limit: 10).map(\.id) == [kept.id])
+    #expect(try store.removeOrphanedImages() == 0)
+}
