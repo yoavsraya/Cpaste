@@ -9,6 +9,7 @@ let log = Logger(subsystem: "local.cpaste.app", category: "app")
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private let settings = AppSettings()
     private let storeQueue = DispatchQueue(label: "local.cpaste.store")
+    private let recognitionQueue = DispatchQueue(label: "local.cpaste.recognition", qos: .utility)
     private var statusItem: NSStatusItem?
     private var openMenuItem: NSMenuItem?
     private var store: ClipStore?
@@ -29,6 +30,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             startMonitoring(into: store)
             startPanel(over: store)
             startExpiry()
+            recognitionQueue.async { TextRecognizer.readPendingImages(in: store) }
             log.notice("recording clipboard into \(directory.path, privacy: .public)")
         } catch {
             log.fault("cannot open the clip store: \(String(describing: error), privacy: .public)")
@@ -67,13 +69,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func startMonitoring(into store: ClipStore) {
         let queue = storeQueue
+        let recognitionQueue = recognitionQueue
         let settings = settings
         let monitor = PasteboardMonitor { capture, sourceBundleID in
             if let sourceBundleID, settings.ignoredBundleIDs.contains(sourceBundleID) { return }
             // Encoding a large screenshot takes long enough to stall the menu bar, so it runs off the main thread.
             queue.async {
                 do {
-                    try store.insert(capture, sourceBundleID: sourceBundleID)
+                    let clip = try store.insert(capture, sourceBundleID: sourceBundleID)
+                    if case .image = clip.content {
+                        recognitionQueue.async { TextRecognizer.readPendingImages(in: store) }
+                    }
                 } catch {
                     log.error("capture not stored: \(String(describing: error), privacy: .public)")
                 }

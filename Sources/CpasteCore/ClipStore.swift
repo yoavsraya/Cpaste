@@ -100,6 +100,26 @@ public final class ClipStore: Sendable {
         }
     }
 
+    // MARK: Text inside images
+
+    /// Image clips whose text has not been read yet, newest first.
+    public func imagesAwaitingText(limit: Int) throws -> [(clipID: Int64, sha256: String)] {
+        try database.read { db in
+            try Row.fetchAll(db, sql: """
+                SELECT id, imageHash FROM clip WHERE kind = 'image' AND text IS NULL ORDER BY lastUsedAt DESC LIMIT ?
+                """, arguments: [limit])
+                .map { (clipID: $0["id"], sha256: $0["imageHash"]) }
+        }
+    }
+
+    /// Stores the text read from an image clip, so search finds it. An empty string records that the image has no text.
+    public func setImageText(clipID: Int64, to text: String) throws {
+        try database.write { db in
+            // An image row keeps its recognized text in the `text` column, which the search index already covers.
+            try db.execute(sql: "UPDATE clip SET text = ? WHERE id = ? AND kind = 'image'", arguments: [text, clipID])
+        }
+    }
+
     /// Deletes the clips in one transaction, so a failure leaves all of them in place.
     public func delete(clipIDs: [Int64]) throws {
         let imageHashes = try database.write { db in
