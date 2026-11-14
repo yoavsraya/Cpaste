@@ -29,6 +29,7 @@ let rendersPreviews = ProcessInfo.processInfo.environment["CPASTE_RENDER"] != ni
         (.image(image.tiffRepresentation!), "com.apple.screencaptureui", -1140),
         (.text("Thavorn Beach Village Resort & Spa Phuket"), "com.google.Chrome", -960),
         (.text("kamala beach estate"), "com.google.Chrome", -300),
+        (.text("Kamala is quieter than Patong and closer to the airport. The estate has four villas, each with a private pool, and a shared kitchen on the ground floor that stays open late. Check-in is after three. The road down to the beach is steep, so ask for the shuttle. Breakfast is served until eleven and the cook makes a very good khao tom."), "com.apple.Notes", -280),
         (.text("#4C8DF6"), "com.apple.Safari", -250),
         (.text("git log --oneline -5\nswift test\n./scripts/build-app.sh"), "com.apple.Terminal", -200),
         (.file(path: "/Applications/Safari.app"), "com.apple.finder", -150),

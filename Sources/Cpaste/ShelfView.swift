@@ -540,10 +540,13 @@ struct ClipCard: View {
                     .padding(9).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                     .background(.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 7))
                     .padding([.horizontal, .top], 10)
+                    .overlay(alignment: .bottom) { fade(for: string, charactersPerLine: (size.width - 38) / 7, lineHeight: 14.5) }
             case .plain:
                 let isShort = string.count <= 40 && !string.contains(where: \.isNewline)
                 Text(string.prefix(400)).font(.system(size: isShort ? 15 : 13, weight: isShort ? .medium : .regular))
                     .padding([.horizontal, .top], 12)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    .overlay(alignment: .bottom) { fade(for: string, charactersPerLine: (size.width - 24) / 6.6, lineHeight: 16.5) }
             }
         case .link(let url):
             let host = url.host.map { $0.hasPrefix("www.") ? String($0.dropFirst(4)) : $0 } ?? url.absoluteString
@@ -573,6 +576,22 @@ struct ClipCard: View {
             } else {
                 Label("Image file is missing", systemImage: "exclamationmark.triangle").font(.system(size: 12)).padding(12)
             }
+        }
+    }
+
+    /// A fade over the last lines of a text that does not fit, saying how much is hidden.
+    @ViewBuilder private func fade(for text: String, charactersPerLine: CGFloat, lineHeight: CGFloat) -> some View {
+        // An estimate from average character width. A real measurement would need a layout pass per card.
+        let wrapped = text.split(omittingEmptySubsequences: false, whereSeparator: \.isNewline)
+            .reduce(0) { $0 + max(1, Int((CGFloat($1.count) / charactersPerLine).rounded(.up))) }
+        let visible = Int((size.height - 46 - 28 - 12) / lineHeight)
+        if wrapped > visible {
+            let hidden = wrapped - visible
+            Text("+ \(hidden) more \(hidden == 1 ? "line" : "lines")")
+                .font(.system(size: 10.5, weight: .medium)).foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, minHeight: 40, alignment: .bottom)
+                .background(LinearGradient(colors: [.clear, Color(nsColor: .textBackgroundColor)],
+                                           startPoint: .top, endPoint: UnitPoint(x: 0.5, y: 0.7)))
         }
     }
 
