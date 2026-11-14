@@ -17,6 +17,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var panel: PanelController?
     private var hotKey: HotKey?
     private var settingsWindow: NSWindow?
+    private var welcomeWindow: NSWindow?
     private var expiryTimer: Timer?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -31,6 +32,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             startPanel(over: store)
             startExpiry()
             recognitionQueue.async { TextRecognizer.readPendingImages(in: store) }
+            if !settings.hasSeenWelcome { showWelcome() }
             log.notice("recording clipboard into \(directory.path, privacy: .public)")
         } catch {
             log.fault("cannot open the clip store: \(String(describing: error), privacy: .public)")
@@ -161,6 +163,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func togglePanel() {
         panel?.toggle()
+    }
+
+    private func showWelcome() {
+        settings.hasSeenWelcome = true
+        let view = WelcomeView(openShortcut: settings.openShortcut.display) { [weak self] in
+            self?.welcomeWindow?.close()
+            self?.welcomeWindow = nil
+        }
+        let window = NSWindow(contentViewController: NSHostingController(rootView: view))
+        window.title = "Welcome to Cpaste"
+        window.styleMask = [.titled, .closable, .fullSizeContentView]
+        window.titlebarAppearsTransparent = true
+        window.titleVisibility = .hidden
+        window.isReleasedWhenClosed = false
+        window.center()
+        welcomeWindow = window
+        NSApp.activate(ignoringOtherApps: true)
+        window.makeKeyAndOrderFront(nil)
     }
 
     @objc private func showSettings() {

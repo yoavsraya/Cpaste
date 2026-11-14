@@ -23,6 +23,10 @@ UI options for the panel are in `ui-options.html` next to this file, published a
 - A pinned clip sorts first and never expires. Categories are reordered by dragging one onto another.
 - Text inside image clips is read on the Mac with Apple's Vision framework and added to the search index. Hebrew is not supported by Vision.
 - A filter menu narrows the shelf to one clip type or one source app.
+- The shelf follows the system light or dark appearance, and cards come in three sizes.
+- Cmd+C copies a clip without pasting, Cmd+O opens a link, file or image, and a card can be dragged into another app.
+- A welcome window explains the shortcut and the Accessibility permission on the first launch only.
+- Settings shows the number of clips and the size of the history on disk.
 - Lives in the menu bar with no Dock icon. Starts at login when the setting is on.
 
 ## What it leaves out

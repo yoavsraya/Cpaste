@@ -59,7 +59,7 @@ struct SettingsView: View {
             .scrollContentBackground(.hidden)
             .background(Color(nsColor: .windowBackgroundColor))
         }
-        .frame(width: 760, height: 560)
+        .frame(width: 760, height: 640)
         .ignoresSafeArea()
     }
 

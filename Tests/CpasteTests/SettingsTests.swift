@@ -23,6 +23,8 @@ private func keyDown(_ keyCode: Int, _ flags: NSEvent.ModifierFlags) -> NSEvent 
     let defaults = freshDefaults()
     let settings = AppSettings(defaults: defaults)
     #expect(settings.pasteTarget == .activeApp)
+    #expect(!settings.hasSeenWelcome)
+    settings.hasSeenWelcome = true
     #expect(settings.showsDuringScreenSharing)
     #expect(settings.ignoredBundleIDs.contains("com.apple.keychainaccess"))
     settings.pasteTarget = .clipboard
@@ -34,6 +36,7 @@ private func keyDown(_ keyCode: Int, _ flags: NSEvent.ModifierFlags) -> NSEvent 
     let relaunched = AppSettings(defaults: defaults)
     #expect(relaunched.pasteTarget == .clipboard)
     #expect(relaunched.cardSize == .large)
+    #expect(relaunched.hasSeenWelcome)
     #expect(!relaunched.showsDuringScreenSharing)
     #expect(relaunched.quickPasteModifier == .option)
     #expect(relaunched.nextCategoryShortcut.display == "⌘K")
@@ -83,6 +86,24 @@ private func keyDown(_ keyCode: Int, _ flags: NSEvent.ModifierFlags) -> NSEvent 
     #expect(try store.search("", in: .all, limit: 10).map(\.id) == [kept.id])
 }
 
+/// Draws the welcome window off screen into `build/welcome.png`.
+@MainActor
+@Test(.enabled(if: rendersPreviews)) func welcomeRenders() throws {
+    let host = NSHostingView(rootView: WelcomeView(openShortcut: "⌘1", close: {})
+        .background(Color(nsColor: .windowBackgroundColor)).environment(\.colorScheme, .dark))
+    host.frame = NSRect(origin: .zero, size: host.fittingSize)
+    let window = NSWindow(contentRect: host.frame, styleMask: [.titled, .fullSizeContentView], backing: .buffered, defer: false)
+    window.appearance = NSAppearance(named: .darkAqua)
+    window.contentView = host
+    host.layoutSubtreeIfNeeded()
+    RunLoop.main.run(until: Date().addingTimeInterval(0.3))
+    let bitmap = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+    host.cacheDisplay(in: host.bounds, to: bitmap)
+    let output = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+        .appendingPathComponent("../../build/welcome.png").standardizedFileURL
+    try #require(bitmap.representation(using: .png, properties: [:])).write(to: output)
+}
+
 /// Draws each settings pane off screen into `build/settings-<pane>.png`, so the layout can be reviewed without the running app.
 @MainActor
 @Test(.enabled(if: rendersPreviews), arguments: SettingsView.Pane.allCases)
@@ -90,7 +111,7 @@ func settingsPaneRenders(pane: SettingsView.Pane) async throws {
     let view = SettingsView(settings: AppSettings(defaults: freshDefaults()), actions: SettingsActions(), pane: pane)
         .environment(\.colorScheme, .dark)
     let host = NSHostingView(rootView: view)
-    host.frame = NSRect(x: 0, y: 0, width: 760, height: 560)
+    host.frame = NSRect(x: 0, y: 0, width: 760, height: 640)
     let window = NSWindow(contentRect: host.frame, styleMask: [.titled, .fullSizeContentView], backing: .buffered, defer: false)
     window.appearance = NSAppearance(named: .darkAqua)
     window.contentView = host
