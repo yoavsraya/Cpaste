@@ -1,3 +1,5 @@
+<img src="Resources/Icons/cpaste-app-icon.png" width="96" alt="Cpaste icon">
+
 # Cpaste
 
 Cpaste remembers everything you copy on your Mac, so you can paste it again later.

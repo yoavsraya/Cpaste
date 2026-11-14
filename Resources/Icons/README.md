@@ -8,4 +8,4 @@ Approved “Held clip” artwork:
 
 The app palette is deep teal (`#123D3A`), mint (`#B6E8CE`), and ivory (`#FFF4DC`).
 
-These are source assets. Icon generation and integration into the app bundle and menu bar are separate steps.
+`scripts/make-icon.swift` turns the PNG into `Resources/AppIcon.icns`, in the rounded shape macOS expects. Run it again after changing the artwork. `scripts/build-app.sh` copies the icon file and the menu-bar SVG into the app bundle.

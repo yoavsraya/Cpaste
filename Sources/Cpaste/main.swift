@@ -41,7 +41,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func installStatusItem() {
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
-        item.button?.image = NSImage(systemSymbolName: "doc.on.clipboard", accessibilityDescription: "Cpaste")
+        item.button?.image = Self.menuBarIcon()
         let menu = NSMenu()
         openMenuItem = menu.addItem(withTitle: "Open Cpaste", action: #selector(togglePanel), keyEquivalent: "")
         menu.addItem(withTitle: "Settings…", action: #selector(showSettings), keyEquivalent: ",")
@@ -49,6 +49,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(withTitle: "Quit Cpaste", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         item.menu = menu
         statusItem = item
+    }
+
+    /// The Cpaste mark from the app bundle. A run outside the bundle, such as `swift run`, has no resources and gets a system symbol.
+    private static func menuBarIcon() -> NSImage? {
+        guard let url = Bundle.main.url(forResource: "cpaste-menu-bar", withExtension: "svg"),
+              let icon = NSImage(contentsOf: url)
+        else {
+            log.error("menu-bar icon is missing from the app bundle")
+            return NSImage(systemSymbolName: "doc.on.clipboard", accessibilityDescription: "Cpaste")
+        }
+        icon.size = NSSize(width: 18, height: 18)
+        icon.isTemplate = true
+        icon.accessibilityDescription = "Cpaste"
+        return icon
     }
 
     private func startMonitoring(into store: ClipStore) {
