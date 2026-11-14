@@ -44,12 +44,14 @@ extension ClipStore {
     /// Every category with the clips saved in it, in shelf order.
     public func exportArchive() throws -> Data {
         let categories = try self.categories().map { category in
-            ClipArchive.Category(name: category.name, colorHex: category.colorHex, clips: try search("", in: .category(category.id), limit: .max).map { clip in
+            ClipArchive.Category(name: category.name, colorHex: category.colorHex, clips: try search("", in: .category(category.id), limit: .max).compactMap { clip in
+                // A copied file is only a path, which means nothing on another Mac, so it is left out.
+                if clip.content.kind == .file { return nil }
                 var item = ClipArchive.Item(kind: clip.content.kind, title: clip.title, isPinned: clip.isPinned, sourceBundleID: clip.sourceBundleID)
                 switch clip.content {
                 case .text(let string): item.text = string
                 case .link(let url): item.text = url.absoluteString
-                case .file(let path): item.text = path
+                case .file: break
                 case .image(let sha, _, _, _): item.image = try Data(contentsOf: imageFiles.imageURL(sha256: sha))
                 }
                 return item
@@ -88,12 +90,15 @@ extension ClipArchive.Item {
         self.init(kind: kind, text: nil, image: nil, title: title, isPinned: isPinned, sourceBundleID: sourceBundleID)
     }
 
-    /// Nil when the item lacks the data its kind needs.
+    /// Nil when the item lacks the data its kind needs, and for kinds that are never imported.
+    /// The file comes from someone else, so it is held to the same rules as the clipboard.
     var capture: Capture? {
         switch kind {
         case .text: text.map(Capture.text)
-        case .link: text.flatMap(URL.init(string:)).map(Capture.link)
-        case .file: text.map(Capture.file(path:))
+        // Only a real web address becomes a link, so a file cannot plant a link that opens another app.
+        case .link: text.map { webLink(from: $0).map(Capture.link) ?? .text($0) }
+        // Never imported: a planted path could pass off a private file of this Mac as a harmless clip.
+        case .file: nil
         case .image: image.map(Capture.image)
         }
     }

@@ -82,7 +82,7 @@ Click the Cpaste icon in the menu bar and choose **Settings…**.
 - **Card size** makes the cards small, medium or large.
 - **Keep history** sets how long clips outside a category are kept, from one day to forever.
 - **History size** shows how many clips you have and how much disk they use.
-- **Export…** and **Import…** save every category with its clips to one file and read it back, to move them to another Mac or share them.
+- **Export…** and **Import…** save every category with its clips to one file and read it back, to move them to another Mac or share them. Copied files are left out, because a file path means nothing on another Mac.
 - **Erase History…** deletes every clip that is not pinned or in a category.
 
 **Privacy**

@@ -275,7 +275,10 @@ final class PanelController: NSObject, NSWindowDelegate {
     private func open(_ clip: Clip) {
         switch clip.content {
         case .text: return
-        case .link(let url): NSWorkspace.shared.open(url)
+        case .link(let url):
+            // Only web addresses are opened, whatever a clip row claims to be.
+            guard ["http", "https"].contains(url.scheme?.lowercased() ?? "") else { return }
+            NSWorkspace.shared.open(url)
         case .file(let path): NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: path)])
         case .image(let sha, _, _, _): NSWorkspace.shared.open(store.imageFiles.imageURL(sha256: sha))
         }

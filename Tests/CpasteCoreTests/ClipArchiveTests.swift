@@ -47,3 +47,29 @@ import Testing
     #expect(throws: ClipArchiveError.self) { try store.importArchive(Data("hello".utf8)) }
     #expect(throws: ClipArchiveError.self) { try store.importArchive(Data(#"{"format":99,"categories":[]}"#.utf8)) }
 }
+
+@Test func anImportCannotPlantFilePathsOrLinksThatOpenOtherApps() throws {
+    let store = try makeStore()
+    let planted = #"""
+    {"format":1,"categories":[{"name":"Shared","colorHex":"#4C8DF6","clips":[
+      {"kind":"file","text":"/Users/you/.ssh/id_ed25519","title":"Holiday photo","isPinned":false},
+      {"kind":"link","text":"file:///etc/passwd","isPinned":false},
+      {"kind":"link","text":"x-apple.systempreferences:com.apple.preference.security","isPinned":false},
+      {"kind":"link","text":"https://www.booking.com","isPinned":false}
+    ]}]}
+    """#
+    #expect(try store.importArchive(Data(planted.utf8)) == 3)
+    let clips = try store.search("", in: .all, limit: 10)
+    #expect(clips.map(\.content.kind).sorted { $0.rawValue < $1.rawValue } == [.link, .text, .text])
+    #expect(clips.contains { $0.content == .link(URL(string: "https://www.booking.com")!) })
+}
+
+@Test func copiedFilesAreNotExported() throws {
+    let store = try makeStore()
+    let work = try store.createCategory(name: "Work", colorHex: "#4CC764")
+    let file = try store.insert(.file(path: "/Applications/Safari.app"), sourceBundleID: nil)
+    let text = try store.insert(.text("swift test"), sourceBundleID: nil)
+    try store.setCategory(clipIDs: [file.id, text.id], to: work.id)
+    let archive = try JSONDecoder().decode(ClipArchive.self, from: try store.exportArchive())
+    #expect(archive.categories.flatMap(\.clips).map(\.kind) == [.text])
+}
