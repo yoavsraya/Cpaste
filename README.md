@@ -6,8 +6,6 @@ Cpaste remembers everything you copy on your Mac, so you can paste it again late
 
 Press **Cmd+1** and a shelf slides up with your recent copies, text and images. Pick one and press Return to paste it.
 
-![The Cpaste shelf with example clips](docs/shelf.png)
-
 - It is free.
 - Everything stays on your Mac. Cpaste has no account and never connects to the internet.
 - It works on macOS 14 or later.
