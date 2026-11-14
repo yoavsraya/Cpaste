@@ -84,6 +84,16 @@ enum CategoryPalette {
         ("Orange", "#F5A623"), ("Purple", "#B46BE0"), ("Teal", "#3CC8C8"),
         ("Pink", "#F06FA8"), ("Yellow", "#E8C53A"), ("Grey", "#8E99A4"),
     ]
+
+    @MainActor static func swatch(hex: String) -> NSImage {
+        let image = NSImage(size: NSSize(width: 14, height: 14), flipped: false) { rect in
+            NSColor(Color(hex: hex)).setFill()
+            NSBezierPath(ovalIn: rect.insetBy(dx: 1, dy: 1)).fill()
+            return true
+        }
+        image.isTemplate = false
+        return image
+    }
 }
 
 struct ShelfView: View {
@@ -162,7 +172,12 @@ struct ShelfView: View {
                                     Button {
                                         actions.recolor(category, color.hex)
                                     } label: {
-                                        Label(color.name, systemImage: category.colorHex == color.hex ? "checkmark" : "circle.fill")
+                                        // A menu draws symbols as one-colour templates, so the swatch is a real image.
+                                        Label {
+                                            Text(category.colorHex == color.hex ? "\(color.name) ✓" : color.name)
+                                        } icon: {
+                                            Image(nsImage: CategoryPalette.swatch(hex: color.hex))
+                                        }
                                     }
                                 }
                             }
