@@ -5,6 +5,15 @@ import ServiceManagement
 import SwiftUI
 import UniformTypeIdentifiers
 
+/// One line of the status list in Settings.
+struct HealthItem: Identifiable {
+    let title: String
+    let detail: String
+    let isHealthy: Bool
+
+    var id: String { title }
+}
+
 @MainActor
 struct SettingsActions {
     /// Turns the global shortcut off while a new one is being typed, and back on afterwards. Returns false if the system refused it.
@@ -16,6 +25,8 @@ struct SettingsActions {
     /// Each asks for a file, does the work, and returns a line to show, or nil when the user cancelled.
     var exportCategories: () -> String? = { nil }
     var importCategories: () -> String? = { nil }
+    /// Whether each part of Cpaste is working, checked at the moment of the call.
+    var health: () -> [HealthItem] = { [] }
     /// Nil in builds that cannot update themselves.
     var updater: UpdaterController?
 }
@@ -124,9 +135,27 @@ private struct GeneralPane: View {
     @State private var usage: String?
     @State private var checksForUpdates = false
     @State private var transferResult: String?
+    @State private var health: [HealthItem] = []
 
     var body: some View {
         Form {
+            if !health.isEmpty {
+                Section("Status") {
+                    ForEach(health) { item in
+                        LabeledContent {
+                            Text(item.detail).foregroundStyle(item.isHealthy ? Color.secondary : Color.orange)
+                                .multilineTextAlignment(.trailing)
+                        } label: {
+                            Label {
+                                Text(item.title)
+                            } icon: {
+                                Image(systemName: item.isHealthy ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                                    .foregroundStyle(item.isHealthy ? Color.green : Color.orange)
+                            }
+                        }
+                    }
+                }
+            }
             if let updater = actions.updater {
                 Section {
                     Toggle(isOn: $checksForUpdates) {
@@ -205,12 +234,14 @@ private struct GeneralPane: View {
         }
         .formStyle(.grouped)
         .onAppear {
+            health = actions.health()
             usage = actions.usageSummary()
             checksForUpdates = actions.updater?.checksAutomatically ?? false
         }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             canPasteDirectly = Paster.canPasteDirectly
             usage = actions.usageSummary()
+            health = actions.health()
         }
         .confirmationDialog("Erase the clipboard history?", isPresented: $isConfirmingErase) {
             Button("Erase History", role: .destructive) {

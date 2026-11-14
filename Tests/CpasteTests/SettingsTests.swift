@@ -110,7 +110,13 @@ private func keyDown(_ keyCode: Int, _ flags: NSEvent.ModifierFlags) -> NSEvent 
 @MainActor
 @Test(.enabled(if: rendersPreviews), arguments: SettingsView.Pane.allCases)
 func settingsPaneRenders(pane: SettingsView.Pane) async throws {
-    let view = SettingsView(settings: AppSettings(defaults: freshDefaults()), actions: SettingsActions(), pane: pane)
+    var actions = SettingsActions()
+    actions.health = {
+        [HealthItem(title: "Recording", detail: "On", isHealthy: true),
+         HealthItem(title: "Pasting", detail: "Needs the Accessibility permission", isHealthy: false),
+         HealthItem(title: "Updates", detail: "Last checked 2 hours ago", isHealthy: true)]
+    }
+    let view = SettingsView(settings: AppSettings(defaults: freshDefaults()), actions: actions, pane: pane)
         .environment(\.colorScheme, .dark)
     let host = NSHostingView(rootView: view)
     host.frame = NSRect(x: 0, y: 0, width: 760, height: 640)

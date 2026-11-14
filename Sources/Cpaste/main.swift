@@ -202,6 +202,45 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    private func health() -> [HealthItem] {
+        var items: [HealthItem] = []
+        if monitor == nil || store == nil {
+            items.append(HealthItem(title: "Recording", detail: "Not running. Quit and reopen Cpaste.", isHealthy: false))
+        } else if monitor?.isPaused == true {
+            items.append(HealthItem(title: "Recording", detail: "Paused from the menu bar", isHealthy: false))
+        } else {
+            items.append(HealthItem(title: "Recording", detail: "On", isHealthy: true))
+        }
+
+        if settings.pasteTarget == .clipboard {
+            items.append(HealthItem(title: "Pasting", detail: "Copies only, as you chose", isHealthy: true))
+        } else if Paster.canPasteDirectly {
+            items.append(HealthItem(title: "Pasting", detail: "Allowed to paste for you", isHealthy: true))
+        } else {
+            items.append(HealthItem(title: "Pasting", detail: "Needs the Accessibility permission", isHealthy: false))
+        }
+
+        if !updater.isActive {
+            items.append(HealthItem(title: "Updates", detail: "Not available in this build", isHealthy: false))
+        } else if !updater.checksAutomatically {
+            items.append(HealthItem(title: "Updates", detail: "Automatic checks are off", isHealthy: false))
+        } else {
+            let last = updater.lastCheck.map { "Last checked \($0.formatted(.relative(presentation: .named)))" } ?? "Not checked yet"
+            items.append(HealthItem(title: "Updates", detail: last, isHealthy: true))
+        }
+
+        do {
+            let usage = try store?.usage()
+            let unread = try store?.imagesAwaitingText(limit: 1000).count ?? 0
+            items.append(HealthItem(title: "History", detail: usage == nil ? "Not open" : "Readable", isHealthy: usage != nil))
+            items.append(HealthItem(title: "Text in images", detail: unread == 0 ? "All images read" : "\(unread) still to read",
+                                    isHealthy: unread == 0))
+        } catch {
+            items.append(HealthItem(title: "History", detail: "Cannot be read. \(error.localizedDescription)", isHealthy: false))
+        }
+        return items
+    }
+
     private func usageSummary() -> String? {
         do {
             guard let usage = try store?.usage() else { return nil }
@@ -289,6 +328,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 usageSummary: { [weak self] in self?.usageSummary() },
                 exportCategories: { [weak self] in self?.exportCategories() },
                 importCategories: { [weak self] in self?.importCategories() },
+                health: { [weak self] in self?.health() ?? [] },
                 updater: updater.isActive ? updater : nil
             )
             let window = NSWindow(contentViewController: NSHostingController(rootView: SettingsView(settings: settings, actions: actions)))

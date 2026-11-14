@@ -15,6 +15,8 @@ final class UpdaterController: NSObject, @preconcurrency SPUStandardUserDriverDe
         set { controller?.updater.automaticallyChecksForUpdates = newValue }
     }
 
+    var lastCheck: Date? { controller?.updater.lastUpdateCheckDate }
+
     func start() {
         // `swift run` and the tests have no Info.plist feed, and Sparkle refuses to start without one.
         guard controller == nil, Bundle.main.object(forInfoDictionaryKey: "SUFeedURL") != nil else {
