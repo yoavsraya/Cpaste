@@ -4,9 +4,12 @@ import SwiftUI
 import Testing
 @testable import Cpaste
 
+/// Preview renders run only with `CPASTE_RENDER=1`, because hosting real AppKit views crashes the test runner about one run in ten.
+let rendersPreviews = ProcessInfo.processInfo.environment["CPASTE_RENDER"] != nil
+
 /// Draws the shelf off screen into `build/shelf-preview.png`, so its layout can be reviewed without the running app.
 @MainActor
-@Test func shelfRendersItsClips() throws {
+@Test(.enabled(if: rendersPreviews)) func shelfRendersItsClips() throws {
     let directory = FileManager.default.temporaryDirectory.appendingPathComponent("cpaste-render-\(UUID().uuidString)")
     let store = try ClipStore(directory: directory)
     let image = NSImage(size: NSSize(width: 1284, height: 742), flipped: false) { rect in
