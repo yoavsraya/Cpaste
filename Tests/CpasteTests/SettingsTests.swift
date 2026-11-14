@@ -26,12 +26,14 @@ private func keyDown(_ keyCode: Int, _ flags: NSEvent.ModifierFlags) -> NSEvent 
     #expect(settings.showsDuringScreenSharing)
     #expect(settings.ignoredBundleIDs.contains("com.apple.keychainaccess"))
     settings.pasteTarget = .clipboard
+    settings.cardSize = .large
     settings.showsDuringScreenSharing = false
     settings.quickPasteModifier = .option
     settings.nextCategoryShortcut = Shortcut(keyCode: UInt32(kVK_ANSI_K), carbonModifiers: UInt32(cmdKey), keyLabel: "K")
 
     let relaunched = AppSettings(defaults: defaults)
     #expect(relaunched.pasteTarget == .clipboard)
+    #expect(relaunched.cardSize == .large)
     #expect(!relaunched.showsDuringScreenSharing)
     #expect(relaunched.quickPasteModifier == .option)
     #expect(relaunched.nextCategoryShortcut.display == "⌘K")

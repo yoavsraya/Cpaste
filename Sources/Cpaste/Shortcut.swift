@@ -74,6 +74,23 @@ enum QuickPasteModifier: String, CaseIterable {
     }
 }
 
+enum CardSize: String, CaseIterable {
+    case small, medium, large
+
+    var label: String { rawValue.capitalized }
+
+    var card: CGSize {
+        switch self {
+        case .small: CGSize(width: 168, height: 150)
+        case .medium: CGSize(width: 216, height: 208)
+        case .large: CGSize(width: 272, height: 268)
+        }
+    }
+
+    /// The shelf is the card plus the header above it and the padding below.
+    var shelfHeight: CGFloat { card.height + 92 }
+}
+
 /// Where Return sends the selected clip.
 enum PasteTarget: String, CaseIterable {
     case activeApp, clipboard

@@ -10,7 +10,6 @@ private final class ShelfPanel: NSPanel {
 
 @MainActor
 final class PanelController: NSObject, NSWindowDelegate {
-    private static let height: CGFloat = 300
     private static let margin: CGFloat = 8
 
     private let store: ClipStore
@@ -76,6 +75,7 @@ final class PanelController: NSObject, NSWindowDelegate {
         model.appFilter = nil
         model.naming = nil
         model.editing = nil
+        model.cardSize = settings.cardSize
         model.canPasteDirectly = !pastesIntoActiveApp || Paster.canPasteDirectly
         panel.sharingType = settings.showsDuringScreenSharing ? .readOnly : .none
         reload()
@@ -84,7 +84,7 @@ final class PanelController: NSObject, NSWindowDelegate {
         let screen = NSScreen.screens.first { $0.frame.contains(mouse) } ?? NSScreen.main
         if let visible = screen?.visibleFrame {
             panel.setFrame(NSRect(x: visible.minX + Self.margin, y: visible.minY + Self.margin,
-                                  width: visible.width - 2 * Self.margin, height: Self.height), display: true)
+                                  width: visible.width - 2 * Self.margin, height: settings.cardSize.shelfHeight), display: true)
         }
         panel.makeKeyAndOrderFront(nil)
         model.focusToken += 1
@@ -293,7 +293,7 @@ final class PanelController: NSObject, NSWindowDelegate {
         if clips.contains(where: { $0.categoryID != nil }) {
             _ = add("Remove from category", .none)
         }
-        let origin = NSPoint(x: 16 + CGFloat(model.selection) * 40, y: Self.height - 60)
+        let origin = NSPoint(x: 16 + CGFloat(model.selection) * 40, y: panel.frame.height - 60)
         menu.popUp(positioning: nil, at: origin, in: panel.contentView)
     }
 

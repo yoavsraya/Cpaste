@@ -22,6 +22,9 @@ final class AppSettings {
     var pasteTarget: PasteTarget {
         didSet { defaults.set(pasteTarget.rawValue, forKey: Key.pasteTarget) }
     }
+    var cardSize: CardSize {
+        didSet { defaults.set(cardSize.rawValue, forKey: Key.cardSize) }
+    }
     var showsDuringScreenSharing: Bool {
         didSet { defaults.set(showsDuringScreenSharing, forKey: Key.showsDuringScreenSharing) }
     }
@@ -44,6 +47,7 @@ final class AppSettings {
         previousCategoryShortcut = shortcut(Key.previousCategoryShortcut, default: .previousCategoryDefault)
         quickPasteModifier = defaults.string(forKey: Key.quickPasteModifier).flatMap(QuickPasteModifier.init(rawValue:)) ?? .command
         pasteTarget = defaults.string(forKey: Key.pasteTarget).flatMap(PasteTarget.init(rawValue:)) ?? .activeApp
+        cardSize = defaults.string(forKey: Key.cardSize).flatMap(CardSize.init(rawValue:)) ?? .medium
         showsDuringScreenSharing = defaults.object(forKey: Key.showsDuringScreenSharing) as? Bool ?? true
         retention = defaults.string(forKey: Key.retention).flatMap(Retention.init(rawValue:)) ?? .month
         ignoredBundleIDs = defaults.stringArray(forKey: Key.ignoredBundleIDs) ?? Self.defaultIgnoredBundleIDs
@@ -66,6 +70,7 @@ final class AppSettings {
         static let previousCategoryShortcut = "previousCategoryShortcut"
         static let quickPasteModifier = "quickPasteModifier"
         static let pasteTarget = "pasteTarget"
+        static let cardSize = "cardSize"
         static let showsDuringScreenSharing = "showsDuringScreenSharing"
         static let retention = "retention"
         static let ignoredBundleIDs = "ignoredBundleIDs"

@@ -131,6 +131,12 @@ private struct GeneralPane: View {
                     Text(loginError).font(.callout).foregroundStyle(.red)
                 }
             }
+            Section("Card size") {
+                Picker("Card size", selection: $settings.cardSize) {
+                    ForEach(CardSize.allCases, id: \.self) { Text($0.label).tag($0) }
+                }
+                .pickerStyle(.segmented).labelsHidden()
+            }
             Section("Paste items") {
                 target(.activeApp, title: "To active app",
                        caption: "Return pastes the selected clip straight into the app you are using.")

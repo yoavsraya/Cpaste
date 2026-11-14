@@ -66,6 +66,12 @@ let rendersPreviews = ProcessInfo.processInfo.environment["CPASTE_RENDER"] != ni
     try snapshot("shelf-preview", appearance: .darkAqua)
     try snapshot("shelf-light-preview", appearance: .aqua)
 
+    model.cardSize = .small
+    host.frame.size.height = CardSize.small.shelfHeight
+    try snapshot("shelf-small-preview", appearance: .darkAqua)
+    model.cardSize = .medium
+    host.frame.size.height = CardSize.medium.shelfHeight
+
     model.editing = model.clips[0]
     model.editDraft = "Nai Harn beach, Phuket"
     model.focusToken += 1

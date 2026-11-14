@@ -27,6 +27,7 @@ final class ShelfModel {
     var marked: Set<Int64> = []
     var query = ""
     var filter: ClipFilter = .all
+    var cardSize: CardSize = .medium
     var kindFilter: ClipKind?
     var appFilter: String?
     /// The apps offered in the filter menu.
@@ -337,7 +338,8 @@ struct ShelfView: View {
                 LazyHStack(spacing: 12) {
                     ForEach(Array(model.clips.enumerated()), id: \.element.id) { index, clip in
                         let category = model.categories.first { $0.id == clip.categoryID }
-                        ClipCard(clip: clip, category: category, imageFiles: imageFiles, isSelected: model.isSelected(at: index))
+                        ClipCard(clip: clip, category: category, imageFiles: imageFiles, size: model.cardSize.card,
+                                 isSelected: model.isSelected(at: index))
                             .id(clip.id)
                             .onTapGesture {
                                 if NSEvent.modifierFlags.contains(.command) { model.toggleMark(at: index) } else { model.select(at: index) }
@@ -431,6 +433,7 @@ struct ClipCard: View {
     let clip: Clip
     let category: ClipCategory?
     let imageFiles: ImageFiles
+    let size: CGSize
     let isSelected: Bool
 
     var body: some View {
@@ -467,7 +470,7 @@ struct ClipCard: View {
             }
             .frame(maxWidth: .infinity).padding(.horizontal, 10).padding(.bottom, 9)
         }
-        .frame(width: 216, height: 208)
+        .frame(width: size.width, height: size.height)
         .background(Color(nsColor: .textBackgroundColor))
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .overlay(
