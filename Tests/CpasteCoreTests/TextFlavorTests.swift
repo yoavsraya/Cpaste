@@ -35,3 +35,46 @@ func commandsAndCodeAreCode(text: String) {
 func ordinaryTextIsPlain(text: String) {
     #expect(TextFlavor(text) == .plain)
 }
+
+@Test(arguments: ["yoav@example.com", " first.last+tag@mail.example.co.il\n"])
+func emailAddressesAreEmails(text: String) {
+    #expect(TextFlavor(text) == .email)
+}
+
+@Test(arguments: ["+972 54-123-4567", "054-123-4567", "(415) 555-0132", "+14155550132"])
+func phoneNumbersArePhones(text: String) {
+    #expect(TextFlavor(text) == .phone)
+}
+
+@Test func jsonIsPrettyPrinted() {
+    guard case .json(let pretty) = TextFlavor(#"{"name":"Cpaste","tags":["mac","clipboard"]}"#) else {
+        Issue.record("not JSON")
+        return
+    }
+    #expect(pretty.contains("\"name\" : \"Cpaste\""))
+    #expect(pretty.split(whereSeparator: \.isNewline).count == 7)
+}
+
+@Test(arguments: ["14 November 2026", "2026-11-14 18:30", "Nov 14, 2026 at 6:30 PM"])
+func datesAreDates(text: String) {
+    guard case .date = TextFlavor(text) else {
+        Issue.record("\(text) is not a date")
+        return
+    }
+}
+
+@Test func aPostalAddressIsAnAddress() {
+    #expect(TextFlavor("1 Infinite Loop, Cupertino, CA 95014") == .address)
+}
+
+@Test(arguments: [
+    "48213907", "4155550132", "IL62 0108 0000 0009 9999 999", "meet me tomorrow", "version 2.9.4",
+    "yoav@example", "call +972 54-123-4567 after five", "12:30", "today",
+])
+func lookalikesStayPlain(text: String) {
+    #expect(TextFlavor(text) == .plain)
+}
+
+@Test func bracesThatDoNotParseAreNotJSON() {
+    #expect(TextFlavor("{not json}") == .code)
+}

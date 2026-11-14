@@ -604,6 +604,23 @@ struct ClipCard: View {
                     .background(.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 7))
                     .padding([.horizontal, .top], 10)
                     .overlay(alignment: .bottom) { fade(for: string, charactersPerLine: (size.width - 38) / 7, lineHeight: 14.5) }
+            case .json(let pretty):
+                Text(pretty.prefix(600)).font(.system(size: 11.5, design: .monospaced))
+                    .padding(9).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    .background(.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 7))
+                    .padding([.horizontal, .top], 10)
+                    .overlay(alignment: .bottom) { fade(for: pretty, charactersPerLine: (size.width - 38) / 7, lineHeight: 14.5) }
+            case .email:
+                let address = string.trimmingCharacters(in: .whitespacesAndNewlines)
+                let parts = address.split(separator: "@", maxSplits: 1)
+                badge("envelope.fill", title: String(parts.first ?? ""), subtitle: parts.count > 1 ? "@\(parts[1])" : nil)
+            case .phone:
+                badge("phone.fill", title: string.trimmingCharacters(in: .whitespacesAndNewlines), subtitle: nil)
+            case .date(let date):
+                badge("calendar", title: date.formatted(date: .abbreviated, time: .omitted),
+                      subtitle: date.formatted(.dateTime.weekday(.wide)) + (Calendar.current.component(.hour, from: date) == 12 && Calendar.current.component(.minute, from: date) == 0 ? "" : " · " + date.formatted(date: .omitted, time: .shortened)))
+            case .address:
+                badge("mappin.and.ellipse", title: string.trimmingCharacters(in: .whitespacesAndNewlines), subtitle: nil)
             case .plain:
                 let isShort = string.count <= 40 && !string.contains(where: \.isNewline)
                 Text(string.prefix(400)).font(.system(size: isShort ? 15 : 13, weight: isShort ? .medium : .regular))
@@ -642,6 +659,19 @@ struct ClipCard: View {
         }
     }
 
+    /// A round symbol with one strong line under it, for a clip that is a single known thing such as a phone number.
+    private func badge(_ symbol: String, title: String, subtitle: String?) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Image(systemName: symbol).font(.system(size: 12, weight: .semibold)).foregroundStyle(.white)
+                .frame(width: 26, height: 26).background(headerColor, in: Circle()).padding(.bottom, 6)
+            Text(title).font(.system(size: 15, weight: .semibold)).lineLimit(3)
+            if let subtitle {
+                Text(subtitle).font(.system(size: 11.5)).foregroundStyle(.secondary).lineLimit(1)
+            }
+        }
+        .padding(12)
+    }
+
     /// A fade over the last lines of a text that does not fit, saying how much is hidden.
     @ViewBuilder private func fade(for text: String, charactersPerLine: CGFloat, lineHeight: CGFloat) -> some View {
         // An estimate from average character width. A real measurement would need a layout pass per card.
@@ -668,9 +698,7 @@ struct ClipCard: View {
 
     private var kind: (title: String, color: Color) {
         switch (clip.content, flavor) {
-        case (.text, .color): ("Colour", Color(red: 0.31, green: 0.47, blue: 0.85))
-        case (.text, .code): ("Code", Color(red: 0.31, green: 0.47, blue: 0.85))
-        case (.text, .plain): ("Text", Color(red: 0.31, green: 0.47, blue: 0.85))
+        case (.text, let flavor): (flavor.title, Color(red: 0.31, green: 0.47, blue: 0.85))
         case (.link, _): ("Link", Color(red: 0.54, green: 0.39, blue: 0.82))
         case (.image, _): ("Image", Color(red: 0.79, green: 0.34, blue: 0.49))
         case (.file, _): ("File", Color(red: 0.25, green: 0.55, blue: 0.50))
@@ -686,8 +714,9 @@ struct ClipCard: View {
     /// Nil when the content already says everything.
     private var contentDetail: String? {
         switch (clip.content, flavor) {
-        case (.text, .color), (.link, _), (.file, _): return nil
-        case (.text(let string), .code):
+        case (.text, .color), (.text, .email), (.text, .phone), (.text, .address), (.link, _), (.file, _): return nil
+        case (.text(let string), .date): return string.trimmingCharacters(in: .whitespacesAndNewlines)
+        case (.text, .json(let string)), (.text(let string), .code):
             let lines = string.split(whereSeparator: \.isNewline).count
             return lines == 1 ? "1 line" : "\(lines) lines"
         case (.text(let string), .plain): return "\(string.count) characters"
@@ -778,6 +807,21 @@ struct VisualEffect: NSViewRepresentable {
     }
 
     func updateNSView(_ view: NSVisualEffectView, context: Context) {}
+}
+
+extension TextFlavor {
+    var title: String {
+        switch self {
+        case .plain: "Text"
+        case .color: "Colour"
+        case .code: "Code"
+        case .json: "JSON"
+        case .email: "Email"
+        case .phone: "Phone"
+        case .date: "Date"
+        case .address: "Address"
+        }
+    }
 }
 
 extension ClipKind {
