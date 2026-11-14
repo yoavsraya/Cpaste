@@ -69,6 +69,8 @@ final class PanelController: NSObject, NSWindowDelegate {
     private func show() {
         model.query = ""
         model.filter = .all
+        model.kindFilter = nil
+        model.appFilter = nil
         model.naming = nil
         model.editing = nil
         model.canPasteDirectly = !pastesIntoActiveApp || Paster.canPasteDirectly
@@ -105,7 +107,9 @@ final class PanelController: NSObject, NSWindowDelegate {
             if case .category(let id) = model.filter, !model.categories.contains(where: { $0.id == id }) {
                 model.filter = .all
             }
-            model.clips = try store.search(model.query, in: model.filter, limit: 200)
+            model.sourceApps = try store.sourceBundleIDs()
+            model.clips = try store.search(model.query, in: model.filter, kind: model.kindFilter,
+                                           sourceBundleID: model.appFilter, limit: 200)
             model.errorMessage = nil
         } catch {
             log.error("cannot load clips: \(String(describing: error), privacy: .public)")

@@ -7,6 +7,21 @@ public enum ClipContent: Equatable, Sendable {
     case file(path: String)
 }
 
+public enum ClipKind: String, CaseIterable, Sendable {
+    case text, link, image, file
+}
+
+extension ClipContent {
+    public var kind: ClipKind {
+        switch self {
+        case .text: .text
+        case .link: .link
+        case .image: .image
+        case .file: .file
+        }
+    }
+}
+
 public struct Clip: Equatable, Sendable, Identifiable {
     public let id: Int64
     public let content: ClipContent

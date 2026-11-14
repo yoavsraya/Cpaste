@@ -56,9 +56,19 @@ public final class ClipStore: Sendable {
     }
 
     /// Clips in `filter` whose text has a word starting with every word of `query`, newest first. An empty query matches all.
-    public func search(_ query: String, in filter: ClipFilter, limit: Int) throws -> [Clip] {
+    /// `kind` and `sourceBundleID` narrow the result to one clip type and one source app.
+    public func search(_ query: String, in filter: ClipFilter, kind: ClipKind? = nil, sourceBundleID: String? = nil,
+                       limit: Int) throws -> [Clip] {
         var conditions: [String] = []
         var arguments: [(any DatabaseValueConvertible)?] = []
+        if let kind {
+            conditions.append("kind = ?")
+            arguments.append(kind.rawValue)
+        }
+        if let sourceBundleID {
+            conditions.append("sourceBundleID = ?")
+            arguments.append(sourceBundleID)
+        }
         if case .category(let id) = filter {
             conditions.append("categoryID = ?")
             arguments.append(id)
@@ -97,6 +107,16 @@ public final class ClipStore: Sendable {
             let row = try Row.fetchOne(db, sql: "UPDATE clip SET kind = ?, text = ?, contentHash = ? WHERE id = ? RETURNING *",
                                        arguments: [columns.kind, columns.text, columns.contentHash, clipID])!
             return try Self.clip(from: row)
+        }
+    }
+
+    /// The apps that clips were copied from, most recently used first.
+    public func sourceBundleIDs() throws -> [String] {
+        try database.read { db in
+            try String.fetchAll(db, sql: """
+                SELECT sourceBundleID FROM clip WHERE sourceBundleID IS NOT NULL
+                GROUP BY sourceBundleID ORDER BY MAX(lastUsedAt) DESC
+                """)
         }
     }
 

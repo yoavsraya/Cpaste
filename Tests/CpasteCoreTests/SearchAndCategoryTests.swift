@@ -122,3 +122,18 @@ func awkwardQueriesDoNotThrow(query: String) throws {
     try store.moveCategory(id: ids[1], toPlaceOf: ids[1])
     #expect(try store.categories().map(\.name) == ["Travel", "Numbers", "Work", "Links"])
 }
+
+@Test func filteringByTypeAndByApp() throws {
+    let store = try makeStore()
+    let start = Date(timeIntervalSince1970: 1_000)
+    try store.insert(.text("kamala beach estate"), sourceBundleID: "com.google.Chrome", at: start)
+    try store.insert(.link(URL(string: "https://www.booking.com/kamala")!), sourceBundleID: "com.google.Chrome", at: start.addingTimeInterval(1))
+    try store.insert(.text("kamala notes"), sourceBundleID: "com.apple.Notes", at: start.addingTimeInterval(2))
+    try store.insert(.image(pngData()), sourceBundleID: nil, at: start.addingTimeInterval(3))
+
+    #expect(try store.search("", in: .all, kind: .link, limit: 10).map(\.content.kind) == [.link])
+    #expect(try store.search("", in: .all, sourceBundleID: "com.google.Chrome", limit: 10).count == 2)
+    #expect(try store.search("kamala", in: .all, kind: .text, sourceBundleID: "com.google.Chrome", limit: 10).count == 1)
+    #expect(try store.search("", in: .all, kind: .file, limit: 10).isEmpty)
+    #expect(try store.sourceBundleIDs() == ["com.apple.Notes", "com.google.Chrome"])
+}

@@ -19,6 +19,10 @@ final class ShelfModel {
     var marked: Set<Int64> = []
     var query = ""
     var filter: ClipFilter = .all
+    var kindFilter: ClipKind?
+    var appFilter: String?
+    /// The apps offered in the filter menu.
+    var sourceApps: [String] = []
     var naming: Naming?
     var nameDraft = ""
     /// The clip whose text is open in the edit box.
@@ -148,6 +152,7 @@ struct ShelfView: View {
 
     private var emptyMessage: String {
         if !model.query.isEmpty { return "No clips match “\(model.query)”." }
+        if model.kindFilter != nil || model.appFilter != nil { return "No clips match this filter." }
         if model.filter != .all { return "Nothing saved here yet. Drag a clip onto this category, or select one and press ⌘S." }
         return "Nothing copied yet. Copy something and it shows up here."
     }
@@ -163,6 +168,8 @@ struct ShelfView: View {
             .padding(.horizontal, 10).frame(width: 220, height: 30)
             .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
 
+            filterMenu
+
             if model.naming != nil {
                 namingField
             } else {
@@ -170,11 +177,44 @@ struct ShelfView: View {
             }
             Spacer(minLength: 8)
             Text(model.marked.isEmpty
-                 ? "⌘click to select more    drag onto a category or ⌘S to save    ⌘⌫ delete"
-                 : "\(model.marked.count) selected    drag onto a category or ⌘S to save    ⌘⌫ delete")
+                 ? "⌘click select    ⌘S save    ⌘E edit    ⌘P pin    ⌘⌫ delete"
+                 : "\(model.marked.count) selected    ⌘S save    ⌘P pin    ⌘⌫ delete")
                 .font(.system(size: 11)).foregroundStyle(.secondary).lineLimit(1)
         }
         .padding(.horizontal, 16).padding(.top, 12).padding(.bottom, 8)
+    }
+
+    private var filterMenu: some View {
+        let isFiltering = model.kindFilter != nil || model.appFilter != nil
+        return Menu {
+            Picker("Type", selection: $model.kindFilter) {
+                Text("All types").tag(ClipKind?.none)
+                ForEach(ClipKind.allCases, id: \.self) { Text($0.filterTitle).tag(ClipKind?.some($0)) }
+            }
+            .pickerStyle(.inline)
+            Picker("App", selection: $model.appFilter) {
+                Text("All apps").tag(String?.none)
+                ForEach(model.sourceApps, id: \.self) { Text(SourceApp.name(bundleID: $0)).tag(String?.some($0)) }
+            }
+            .pickerStyle(.inline)
+        } label: {
+            HStack(spacing: 5) {
+                Image(systemName: isFiltering ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
+                if isFiltering {
+                    Text([model.kindFilter?.filterTitle, model.appFilter.map(SourceApp.name(bundleID:))]
+                        .compactMap { $0 }.joined(separator: " · "))
+                        .lineLimit(1)
+                }
+            }
+            .font(.system(size: 13, weight: .medium))
+            .foregroundStyle(isFiltering ? Color.accentColor : .secondary)
+            .padding(.horizontal, 8).frame(height: 30)
+            .contentShape(Rectangle())
+        }
+        .menuStyle(.button).buttonStyle(.plain).menuIndicator(.hidden).fixedSize()
+        .help("Show only one type of clip, or clips from one app")
+        .onChange(of: model.kindFilter) { actions.reload() }
+        .onChange(of: model.appFilter) { actions.reload() }
     }
 
     private var chips: some View {
@@ -512,6 +552,17 @@ struct VisualEffect: NSViewRepresentable {
     }
 
     func updateNSView(_ view: NSVisualEffectView, context: Context) {}
+}
+
+extension ClipKind {
+    var filterTitle: String {
+        switch self {
+        case .text: "Text"
+        case .link: "Links"
+        case .image: "Images"
+        case .file: "Files"
+        }
+    }
 }
 
 extension Clip {

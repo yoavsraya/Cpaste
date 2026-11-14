@@ -38,7 +38,9 @@ let rendersPreviews = ProcessInfo.processInfo.environment["CPASTE_RENDER"] != ni
 
     let model = ShelfModel()
     model.categories = try store.categories()
+    try store.setPinned(clipIDs: [try #require(try store.search("Nai", in: .all, limit: 1).first).id], to: true)
     model.clips = try store.search("", in: .all, limit: 200)
+    model.sourceApps = try store.sourceBundleIDs()
     model.selection = 1
     model.toggleMark(at: 3)
     model.toggleMark(at: 5)
@@ -58,5 +60,14 @@ let rendersPreviews = ProcessInfo.processInfo.environment["CPASTE_RENDER"] != ni
         .appendingPathComponent("../../build/shelf-preview.png").standardizedFileURL
     try FileManager.default.createDirectory(at: output.deletingLastPathComponent(), withIntermediateDirectories: true)
     try png.write(to: output)
+
+    model.editing = model.clips[0]
+    model.editDraft = "Nai Harn beach, Phuket"
+    model.focusToken += 1
+    RunLoop.main.run(until: Date().addingTimeInterval(0.3))
+    let editBitmap = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+    host.cacheDisplay(in: host.bounds, to: editBitmap)
+    try #require(editBitmap.representation(using: .png, properties: [:]))
+        .write(to: output.deletingLastPathComponent().appendingPathComponent("shelf-edit-preview.png"))
     #expect(model.clips.count == samples.count)
 }

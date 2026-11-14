@@ -39,6 +39,10 @@ Copy things the way you always do. Cpaste records them in the background.
 | Paste the 2nd to 9th clip directly | **Cmd+2** to **Cmd+9** |
 | Find an old clip | Just start typing |
 | Find a screenshot | Type `image` |
+| Edit the text of a clip | **Cmd+E**, then **Cmd+Return** to save |
+| Pin a clip to the front | **Cmd+P** |
+| Show only one type, or one app | The filter button next to the search field |
+| Find a screenshot by its text | Type a word that appears in it |
 | Select several clips | **Cmd+click** each one |
 | Delete the selected clips | **Cmd+Delete** |
 | Move between categories | **Cmd+Right** and **Cmd+Left**, or **Tab** |
@@ -53,7 +57,9 @@ Cpaste deletes clips after one month. To keep a clip, put it in a category.
 
 To save or delete many clips at once, hold **Cmd** and click each one. Then drag any of them onto a category, press **Cmd+S**, or press **Cmd+Delete**.
 
-A clip in a category is never deleted automatically. Click a category to see only its clips, or press **Tab** to move through the categories. Each category has a colour, and its clips get a header and frame in that colour so you can spot them. Other clips take the colour of the app they were copied from, so Chrome clips are red and WhatsApp clips are green. Right-click a category to rename it, change its colour, or delete it. Drag a clip back onto **Clipboard** to take it out of its category.
+A clip in a category is never deleted automatically. Click a category to see only its clips, or press **Tab** to move through the categories. Each category has a colour, and its clips get a header and frame in that colour so you can spot them. Other clips take the colour of the app they were copied from, so Chrome clips are red and WhatsApp clips are green. Right-click a category to rename it, change its colour, or delete it. Drag a clip back onto **Clipboard** to take it out of its category. Drag a category onto another one to change their order.
+
+A pinned clip stays at the front and is never deleted automatically, even outside a category.
 
 ### Settings
 
