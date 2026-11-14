@@ -370,7 +370,7 @@ struct ClipCard: View {
         case .file(let path):
             Label((path as NSString).lastPathComponent, systemImage: "doc").font(.system(size: 13))
         case .image(let sha, _, _, _):
-            if let image = NSImage(contentsOf: imageFiles.thumbnailURL(sha256: sha)) {
+            if let image = Thumbnails.image(at: imageFiles.thumbnailURL(sha256: sha)) {
                 Image(nsImage: image).resizable().scaledToFit()
                     .clipShape(RoundedRectangle(cornerRadius: 6))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -426,6 +426,19 @@ enum SourceApp {
     static func name(bundleID: String) -> String {
         NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID)
             .map { FileManager.default.displayName(atPath: $0.path) } ?? bundleID
+    }
+}
+
+@MainActor
+enum Thumbnails {
+    private static let cache = NSCache<NSURL, NSImage>()
+
+    /// Cached because a card redraws on every selection change, and reading the file each time stalls the shelf.
+    static func image(at url: URL) -> NSImage? {
+        if let cached = cache.object(forKey: url as NSURL) { return cached }
+        guard let image = NSImage(contentsOf: url) else { return nil }
+        cache.setObject(image, forKey: url as NSURL)
+        return image
     }
 }
 
