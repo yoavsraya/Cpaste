@@ -21,6 +21,10 @@ final class ShelfModel {
     var filter: ClipFilter = .all
     var naming: Naming?
     var nameDraft = ""
+    /// The clip whose text is open in the edit box.
+    var editing: Clip?
+    var editDraft = ""
+    var editError: String?
     var canPasteDirectly = true
     var errorMessage: String?
     /// The clip being dragged inside the shelf, read when it is dropped on a category.
@@ -76,6 +80,9 @@ struct ShelfActions {
     var beginNaming: (ShelfModel.Naming) -> Void = { _ in }
     var deleteCategory: (ClipCategory) -> Void = { _ in }
     var recolor: (ClipCategory, _ colorHex: String) -> Void = { _, _ in }
+    var beginEditing: (Clip) -> Void = { _ in }
+    var commitEdit: () -> Void = {}
+    var cancelEdit: () -> Void = {}
 }
 
 enum CategoryPalette {
@@ -97,7 +104,7 @@ enum CategoryPalette {
 }
 
 struct ShelfView: View {
-    private enum Field { case search, name }
+    private enum Field { case search, name, editor }
 
     @Bindable var model: ShelfModel
     let imageFiles: ImageFiles
@@ -108,7 +115,9 @@ struct ShelfView: View {
     var body: some View {
         VStack(spacing: 0) {
             header
-            if let message = model.errorMessage {
+            if model.editing != nil {
+                editor
+            } else if let message = model.errorMessage {
                 notice(message)
             } else if model.clips.isEmpty {
                 notice(emptyMessage)
@@ -125,7 +134,9 @@ struct ShelfView: View {
         .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).strokeBorder(.white.opacity(0.14)))
         .environment(\.colorScheme, .dark)
         .onChange(of: model.query) { actions.reload() }
-        .onChange(of: model.focusToken, initial: true) { focus = model.naming == nil ? .search : .name }
+        .onChange(of: model.focusToken, initial: true) {
+            focus = model.editing != nil ? .editor : model.naming != nil ? .name : .search
+        }
     }
 
     private var emptyMessage: String {
@@ -239,6 +250,27 @@ struct ShelfView: View {
         }
     }
 
+    private var editor: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            TextEditor(text: $model.editDraft)
+                .font(.system(size: 13)).focused($focus, equals: .editor)
+                .scrollContentBackground(.hidden).padding(8)
+                .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 10))
+            HStack(spacing: 10) {
+                if let error = model.editError {
+                    Text(error).font(.system(size: 11)).foregroundStyle(.red)
+                } else {
+                    Text("⌘↩ save    esc cancel").font(.system(size: 11)).foregroundStyle(.secondary)
+                }
+                Spacer()
+                Button("Cancel", action: actions.cancelEdit)
+                Button("Save", action: actions.commitEdit).buttonStyle(.borderedProminent)
+            }
+        }
+        .padding(.horizontal, 16).padding(.bottom, 14).padding(.top, 4)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
     private var cards: some View {
         ScrollViewReader { proxy in
             ScrollView(.horizontal, showsIndicators: false) {
@@ -280,6 +312,9 @@ struct ShelfView: View {
         let many = targets.count > 1
         if !many {
             Button("Paste") { actions.paste(clip) }
+            if clip.isEditable {
+                Button("Edit…") { actions.beginEditing(clip) }
+            }
         }
         Menu(many ? "Save \(targets.count) clips to" : "Save to") {
             ForEach(model.categories) { category in
@@ -454,6 +489,23 @@ struct VisualEffect: NSViewRepresentable {
     }
 
     func updateNSView(_ view: NSVisualEffectView, context: Context) {}
+}
+
+extension Clip {
+    var isEditable: Bool {
+        switch content {
+        case .text, .link: true
+        case .image, .file: false
+        }
+    }
+
+    var editableText: String? {
+        switch content {
+        case .text(let string): string
+        case .link(let url): url.absoluteString
+        case .image, .file: nil
+        }
+    }
 }
 
 extension UTType {

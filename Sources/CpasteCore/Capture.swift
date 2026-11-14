@@ -44,7 +44,7 @@ private func readString(_ type: String, _ types: Set<String>, _ read: (String) -
     return String(data: data, encoding: .utf8)
 }
 
-private func webLink(from string: String) -> URL? {
+func webLink(from string: String) -> URL? {
     let trimmed = string.trimmingCharacters(in: .whitespacesAndNewlines)
     guard trimmed.rangeOfCharacter(from: .whitespacesAndNewlines) == nil,
           let url = URL(string: trimmed),

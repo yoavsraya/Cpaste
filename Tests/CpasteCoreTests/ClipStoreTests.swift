@@ -80,3 +80,34 @@ import Testing
     #expect(fileCount(in: store.imageFiles.directory.appendingPathComponent("images")) == 0)
     #expect(fileCount(in: store.imageFiles.directory.appendingPathComponent("thumbs")) == 0)
 }
+
+@Test func editingATextClipChangesWhatSearchFinds() throws {
+    let store = try makeStore()
+    let clip = try store.insert(.text("kamala beech estate"), sourceBundleID: nil)
+    let edited = try store.updateText(clipID: clip.id, to: "kamala beach estate")
+    #expect(edited.content == .text("kamala beach estate"))
+    #expect(edited.id == clip.id)
+    #expect(try store.search("beach", in: .all, limit: 10).map(\.id) == [clip.id])
+    #expect(try store.search("beech", in: .all, limit: 10).isEmpty)
+}
+
+@Test func editingTextIntoAWebAddressMakesItALink() throws {
+    let store = try makeStore()
+    let clip = try store.insert(.text("booking"), sourceBundleID: nil)
+    let edited = try store.updateText(clipID: clip.id, to: "https://www.booking.com")
+    #expect(edited.content == .link(URL(string: "https://www.booking.com")!))
+}
+
+@Test func editingIntoTheTextOfAnotherClipIsRefused() throws {
+    let store = try makeStore()
+    try store.insert(.text("Nai Harn"), sourceBundleID: nil)
+    let clip = try store.insert(.text("Nai Yang"), sourceBundleID: nil)
+    #expect(throws: ClipStoreError.duplicateText) { try store.updateText(clipID: clip.id, to: "Nai Harn") }
+    #expect(try store.search("", in: .all, limit: 10).count == 2)
+}
+
+@Test func anImageClipCannotBeEdited() throws {
+    let store = try makeStore()
+    let clip = try store.insert(.image(pngData()), sourceBundleID: nil)
+    #expect(throws: ClipStoreError.notEditable) { try store.updateText(clipID: clip.id, to: "text") }
+}

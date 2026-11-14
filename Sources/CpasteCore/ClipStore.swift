@@ -2,8 +2,18 @@ import CryptoKit
 import Foundation
 import GRDB
 
-public enum ClipStoreError: Error {
+public enum ClipStoreError: Error, Equatable, LocalizedError {
     case malformedRow(id: Int64)
+    case notEditable
+    case duplicateText
+
+    public var errorDescription: String? {
+        switch self {
+        case .malformedRow(let id): "Clip \(id) is damaged."
+        case .notEditable: "Only text and links can be edited."
+        case .duplicateText: "Another clip already has this text."
+        }
+    }
 }
 
 public final class ClipStore: Sendable {
@@ -70,6 +80,23 @@ public final class ClipStore: Sendable {
             try Row.fetchAll(db, sql: "SELECT * FROM clip \(filterSQL) ORDER BY lastUsedAt DESC, id DESC LIMIT ?",
                              arguments: StatementArguments(arguments))
                 .map(Self.clip(from:))
+        }
+    }
+
+    /// Replaces the text of a text or link clip. The clip becomes a link when the new text is one web address, and text otherwise.
+    @discardableResult
+    public func updateText(clipID: Int64, to text: String) throws -> Clip {
+        let columns = Columns(webLink(from: text).map(ClipContent.link) ?? .text(text))
+        return try database.write { db in
+            let kind = try String.fetchOne(db, sql: "SELECT kind FROM clip WHERE id = ?", arguments: [clipID])
+            guard kind == "text" || kind == "link" else { throw ClipStoreError.notEditable }
+            // contentHash is unique, so two clips cannot hold the same text.
+            let twin = try Int64.fetchOne(db, sql: "SELECT id FROM clip WHERE contentHash = ? AND id != ?",
+                                          arguments: [columns.contentHash, clipID])
+            guard twin == nil else { throw ClipStoreError.duplicateText }
+            let row = try Row.fetchOne(db, sql: "UPDATE clip SET kind = ?, text = ?, contentHash = ? WHERE id = ? RETURNING *",
+                                       arguments: [columns.kind, columns.text, columns.contentHash, clipID])!
+            return try Self.clip(from: row)
         }
     }
 

@@ -50,7 +50,10 @@ final class PanelController: NSObject, NSWindowDelegate {
             },
             recolor: { [weak self] category, colorHex in
                 self?.change("recolour the category") { try $0.recolorCategory(id: category.id, to: colorHex) }
-            }
+            },
+            beginEditing: { [weak self] in self?.beginEditing($0) },
+            commitEdit: { [weak self] in self?.commitEdit() },
+            cancelEdit: { [weak self] in self?.endEditing() }
         )
         panel.contentView = NSHostingView(rootView: ShelfView(model: model, imageFiles: store.imageFiles, actions: actions))
     }
@@ -63,6 +66,7 @@ final class PanelController: NSObject, NSWindowDelegate {
         model.query = ""
         model.filter = .all
         model.naming = nil
+        model.editing = nil
         model.canPasteDirectly = !pastesIntoActiveApp || Paster.canPasteDirectly
         panel.sharingType = settings.showsDuringScreenSharing ? .readOnly : .none
         reload()
@@ -123,6 +127,14 @@ final class PanelController: NSObject, NSWindowDelegate {
     private func handle(_ event: NSEvent) -> Bool {
         let key = Int(event.keyCode)
         let command = event.modifierFlags.contains(.command)
+        if model.editing != nil {
+            switch key {
+            case kVK_Return where command: commitEdit()
+            case kVK_Escape: endEditing()
+            default: return false
+            }
+            return true
+        }
         if model.naming != nil {
             switch key {
             case kVK_Return, kVK_ANSI_KeypadEnter: commitName()
@@ -148,6 +160,7 @@ final class PanelController: NSObject, NSWindowDelegate {
             if model.query.isEmpty { close() } else { model.query = "" }
         case kVK_ANSI_S where command: showSaveMenu(for: model.selectedClips)
         case kVK_Delete where command: delete(model.selectedClips)
+        case kVK_ANSI_E where command: selectedClip.map(beginEditing)
         default:
             guard settings.quickPasteModifier.isHeld(alone: event.modifierFlags),
                   let digit = event.characters(byApplyingModifiers: []).flatMap(Int.init),
@@ -205,6 +218,40 @@ final class PanelController: NSObject, NSWindowDelegate {
         let selection = model.selection
         change("delete the clips") { try $0.delete(clipIDs: clips.map(\.id)) }
         model.selection = movedSelection(from: selection, by: 0, count: model.clips.count) ?? 0
+    }
+
+    private func beginEditing(_ clip: Clip) {
+        guard let text = clip.editableText else { return }
+        model.naming = nil
+        model.editDraft = text
+        model.editError = nil
+        model.editing = clip
+        model.focusToken += 1
+    }
+
+    private func endEditing() {
+        model.editing = nil
+        model.focusToken += 1
+    }
+
+    private func commitEdit() {
+        guard let clip = model.editing else { return }
+        guard !model.editDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            model.editError = "A clip cannot be empty. Delete it instead."
+            return
+        }
+        guard model.editDraft != clip.editableText else { return endEditing() }
+        do {
+            try store.updateText(clipID: clip.id, to: model.editDraft)
+        } catch {
+            log.error("cannot edit the clip: \(String(describing: error), privacy: .public)")
+            model.editError = error.localizedDescription
+            return
+        }
+        let selection = model.selection
+        endEditing()
+        reload()
+        model.select(at: movedSelection(from: selection, by: 0, count: model.clips.count) ?? 0)
     }
 
     // MARK: Categories
