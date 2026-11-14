@@ -57,6 +57,9 @@ final class PanelController: NSObject, NSWindowDelegate {
             setPinned: { [weak self] clips, isPinned in self?.setPinned(clips, to: isPinned) },
             moveCategory: { [weak self] category, targetID in
                 self?.change("move the category") { try $0.moveCategory(id: category.id, toPlaceOf: targetID) }
+            },
+            moveClip: { [weak self] clip, target in
+                self?.change("move the clip") { try $0.moveClip(id: clip.id, toPlaceOf: target.id) }
             }
         )
         panel.contentView = NSHostingView(rootView: ShelfView(model: model, imageFiles: store.imageFiles, actions: actions))

@@ -94,6 +94,7 @@ struct ShelfActions {
     var cancelEdit: () -> Void = {}
     var setPinned: ([Clip], Bool) -> Void = { _, _ in }
     var moveCategory: (ClipCategory, _ toPlaceOf: Int64) -> Void = { _, _ in }
+    var moveClip: (Clip, _ toPlaceOf: Clip) -> Void = { _, _ in }
 }
 
 enum CategoryPalette {
@@ -122,6 +123,7 @@ struct ShelfView: View {
     let actions: ShelfActions
     @FocusState private var focus: Field?
     @State private var dropTarget: ClipFilter?
+    @State private var cardDropTarget: Int64?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -341,6 +343,19 @@ struct ShelfView: View {
                             .onDrag {
                                 model.dragged = .clip(clip)
                                 return Self.dragProvider(id: clip.id)
+                            }
+                            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .strokeBorder(Color.accentColor, lineWidth: cardDropTarget == clip.id ? 3 : 0))
+                            .onDrop(of: [.cpasteClip], isTargeted: Binding(
+                                get: { cardDropTarget == clip.id },
+                                set: { targeted in
+                                    if targeted { cardDropTarget = clip.id } else if cardDropTarget == clip.id { cardDropTarget = nil }
+                                }
+                            )) { _ in
+                                guard case .clip(let moved) = model.dragged, moved.id != clip.id else { return false }
+                                model.dragged = nil
+                                actions.moveClip(moved, clip)
+                                return true
                             }
                     }
                 }

@@ -18,6 +18,7 @@ UI options for the panel are in `ui-options.html` next to this file, published a
 - Skips items that password managers mark as concealed or transient (`org.nspasteboard.ConcealedType`, `org.nspasteboard.TransientType`).
 - Settings choose whether Return pastes into the active app or only copies, whether the shelf shows in screen shares, the shortcuts for the next and previous category, and the key for paste by position. Erase History deletes every unsaved clip.
 - Cmd+E opens the text of a text or link clip in an edit box. An edit that matches another clip is refused.
+- Clips sort by a manual position, which a new copy or a paste sets to the front. Dragging a clip onto another moves it there, and into or out of the pinned group.
 - A pinned clip sorts first and never expires. Categories are reordered by dragging one onto another.
 - Text inside image clips is read on the Mac with Apple's Vision framework and added to the search index. Hebrew is not supported by Vision.
 - A filter menu narrows the shelf to one clip type or one source app.

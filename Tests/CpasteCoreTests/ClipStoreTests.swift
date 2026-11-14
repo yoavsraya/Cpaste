@@ -126,3 +126,51 @@ import Testing
     try store.setPinned(clipIDs: [old.id], to: false)
     #expect(try store.eraseHistory() == 1)
 }
+
+private func texts(_ store: ClipStore) throws -> [String] {
+    try store.search("", in: .all, limit: 20).map { clip in
+        if case .text(let string) = clip.content { string } else { "?" }
+    }
+}
+
+@Test func draggingAClipOntoAnotherTakesItsPlace() throws {
+    let store = try makeStore()
+    let start = Date(timeIntervalSince1970: 1_000)
+    var ids: [String: Int64] = [:]
+    for (offset, name) in ["e", "d", "c", "b", "a"].enumerated() {
+        ids[name] = try store.insert(.text(name), sourceBundleID: nil, at: start.addingTimeInterval(Double(offset))).id
+    }
+    #expect(try texts(store) == ["a", "b", "c", "d", "e"])
+    try store.moveClip(id: ids["a"]!, toPlaceOf: ids["c"]!)
+    #expect(try texts(store) == ["b", "c", "a", "d", "e"])
+    try store.moveClip(id: ids["e"]!, toPlaceOf: ids["b"]!)
+    #expect(try texts(store) == ["e", "b", "c", "a", "d"])
+    try store.moveClip(id: ids["b"]!, toPlaceOf: ids["d"]!)
+    #expect(try texts(store) == ["e", "c", "a", "d", "b"])
+
+    // A new copy still goes to the front, and so does a pasted clip.
+    try store.insert(.text("new"), sourceBundleID: nil)
+    try store.markUsed(id: ids["d"]!)
+    #expect(try texts(store) == ["d", "new", "e", "c", "a", "b"])
+}
+
+@Test func draggingAmongPinnedClipsPinsAndReordersThem() throws {
+    let store = try makeStore()
+    let start = Date(timeIntervalSince1970: 1_000)
+    var ids: [String: Int64] = [:]
+    for (offset, name) in ["d", "c", "b", "a"].enumerated() {
+        ids[name] = try store.insert(.text(name), sourceBundleID: nil, at: start.addingTimeInterval(Double(offset))).id
+    }
+    try store.setPinned(clipIDs: [ids["c"]!, ids["d"]!], to: true)
+    #expect(try texts(store) == ["c", "d", "a", "b"])
+    try store.moveClip(id: ids["d"]!, toPlaceOf: ids["c"]!)
+    #expect(try texts(store) == ["d", "c", "a", "b"])
+    // Dropping an unpinned clip on a pinned one pins it there.
+    try store.moveClip(id: ids["b"]!, toPlaceOf: ids["c"]!)
+    #expect(try texts(store) == ["d", "b", "c", "a"])
+    #expect(try store.search("", in: .all, limit: 20).map(\.isPinned) == [true, true, true, false])
+    // Dropping a pinned clip on an unpinned one unpins it.
+    try store.moveClip(id: ids["d"]!, toPlaceOf: ids["a"]!)
+    #expect(try texts(store) == ["b", "c", "a", "d"])
+    #expect(try store.search("", in: .all, limit: 20).map(\.isPinned) == [true, true, false, false])
+}

@@ -36,9 +36,9 @@ public final class ClipStore: Sendable {
         return try database.write { db in
             let row = try Row.fetchOne(db, sql: """
                 INSERT INTO clip (kind, text, imageHash, pixelWidth, pixelHeight, byteCount,
-                                  contentHash, sourceBundleID, copiedAt, lastUsedAt)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT (contentHash) DO UPDATE SET lastUsedAt = excluded.lastUsedAt
+                                  contentHash, sourceBundleID, copiedAt, lastUsedAt, position)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, \(Self.frontPosition))
+                ON CONFLICT (contentHash) DO UPDATE SET lastUsedAt = excluded.lastUsedAt, position = excluded.position
                 RETURNING *
                 """, arguments: [
                     columns.kind, columns.text, columns.imageHash, columns.pixelWidth, columns.pixelHeight,
@@ -50,7 +50,7 @@ public final class ClipStore: Sendable {
 
     public func recent(limit: Int) throws -> [Clip] {
         try database.read { db in
-            try Row.fetchAll(db, sql: "SELECT * FROM clip ORDER BY isPinned DESC, lastUsedAt DESC, id DESC LIMIT ?", arguments: [limit])
+            try Row.fetchAll(db, sql: "SELECT * FROM clip ORDER BY isPinned DESC, position DESC, id DESC LIMIT ?", arguments: [limit])
                 .map(Self.clip(from:))
         }
     }
@@ -87,7 +87,7 @@ public final class ClipStore: Sendable {
         let filterSQL = conditions.isEmpty ? "" : "WHERE " + conditions.joined(separator: " AND ")
         arguments.append(limit)
         return try database.read { db in
-            try Row.fetchAll(db, sql: "SELECT * FROM clip \(filterSQL) ORDER BY isPinned DESC, lastUsedAt DESC, id DESC LIMIT ?",
+            try Row.fetchAll(db, sql: "SELECT * FROM clip \(filterSQL) ORDER BY isPinned DESC, position DESC, id DESC LIMIT ?",
                              arguments: StatementArguments(arguments))
                 .map(Self.clip(from:))
         }
@@ -213,6 +213,30 @@ public final class ClipStore: Sendable {
         }
     }
 
+    /// The sort key that puts a clip in front of every other one. A higher position sorts first.
+    private static let frontPosition = "(SELECT COALESCE(MAX(position), 0) + 1 FROM clip)"
+
+    /// Moves a clip into the place of another one. The moved clip becomes pinned or unpinned to match its new neighbours.
+    public func moveClip(id: Int64, toPlaceOf targetID: Int64) throws {
+        guard id != targetID else { return }
+        try database.write { db in
+            guard let moved = try Row.fetchOne(db, sql: "SELECT isPinned, position FROM clip WHERE id = ?", arguments: [id]),
+                  let target = try Row.fetchOne(db, sql: "SELECT isPinned, position FROM clip WHERE id = ?", arguments: [targetID])
+            else { return }
+            let targetPinned: Bool = target["isPinned"]
+            let targetPosition: Double = target["position"]
+            // A clip shown before its target lands just after it, and a clip shown after it lands just before it.
+            let movedPinned: Bool = moved["isPinned"]
+            let wasBefore = movedPinned == targetPinned ? (moved["position"] as Double) > targetPosition : movedPinned
+            let neighbour = try Double.fetchOne(db, sql: """
+                SELECT \(wasBefore ? "MAX" : "MIN")(position) FROM clip
+                WHERE isPinned = ? AND position \(wasBefore ? "<" : ">") ? AND id != ?
+                """, arguments: [targetPinned, targetPosition, id])
+            let position = neighbour.map { ($0 + targetPosition) / 2 } ?? targetPosition + (wasBefore ? -1 : 1)
+            try db.execute(sql: "UPDATE clip SET position = ?, isPinned = ? WHERE id = ?", arguments: [position, targetPinned, id])
+        }
+    }
+
     public func setPinned(clipIDs: [Int64], to isPinned: Bool) throws {
         try database.write { db in
             for id in clipIDs {
@@ -228,7 +252,7 @@ public final class ClipStore: Sendable {
     /// Moves a clip to the top after it was pasted.
     public func markUsed(id: Int64, at date: Date = Date()) throws {
         try database.write { db in
-            try db.execute(sql: "UPDATE clip SET lastUsedAt = ? WHERE id = ?", arguments: [date, id])
+            try db.execute(sql: "UPDATE clip SET lastUsedAt = ?, position = \(Self.frontPosition) WHERE id = ?", arguments: [date, id])
         }
     }
 
@@ -337,6 +361,14 @@ public final class ClipStore: Sendable {
             try db.alter(table: "clip") { t in
                 t.add(column: "isPinned", .boolean).notNull().defaults(to: false)
             }
+        }
+        migrator.registerMigration("v3 clip positions") { db in
+            try db.alter(table: "clip") { t in
+                t.add(column: "position", .double).notNull().defaults(to: 0)
+            }
+            // Existing clips keep their order, newest first.
+            try db.execute(sql: "UPDATE clip SET position = julianday(lastUsedAt)")
+            try db.create(index: "clip_position", on: "clip", columns: ["position"])
         }
         return migrator
     }
