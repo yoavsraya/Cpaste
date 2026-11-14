@@ -45,30 +45,30 @@ let rendersPreviews = ProcessInfo.processInfo.environment["CPASTE_RENDER"] != ni
     model.selection = 1
     model.toggleMark(at: 3)
     model.toggleMark(at: 5)
-    let view = ShelfView(model: model, imageFiles: store.imageFiles, actions: ShelfActions())
-        .background(Color(white: 0.16))
-    let host = NSHostingView(rootView: view)
+    let host = NSHostingView(rootView: ShelfView(model: model, imageFiles: store.imageFiles, actions: ShelfActions()))
     host.frame = NSRect(x: 0, y: 0, width: 1440, height: 300)
     let window = NSWindow(contentRect: host.frame, styleMask: .borderless, backing: .buffered, defer: false)
     window.contentView = host
-    host.layoutSubtreeIfNeeded()
-    RunLoop.main.run(until: Date().addingTimeInterval(0.3))
 
-    let bitmap = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
-    host.cacheDisplay(in: host.bounds, to: bitmap)
-    let png = try #require(bitmap.representation(using: .png, properties: [:]))
-    let output = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
-        .appendingPathComponent("../../build/shelf-preview.png").standardizedFileURL
-    try FileManager.default.createDirectory(at: output.deletingLastPathComponent(), withIntermediateDirectories: true)
-    try png.write(to: output)
+    func snapshot(_ name: String, appearance: NSAppearance.Name) throws {
+        window.appearance = NSAppearance(named: appearance)
+        window.backgroundColor = appearance == .darkAqua ? NSColor(white: 0.16, alpha: 1) : NSColor(white: 0.86, alpha: 1)
+        host.layoutSubtreeIfNeeded()
+        RunLoop.main.run(until: Date().addingTimeInterval(0.3))
+        let bitmap = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+        host.cacheDisplay(in: host.bounds, to: bitmap)
+        let output = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+            .appendingPathComponent("../../build/\(name).png").standardizedFileURL
+        try FileManager.default.createDirectory(at: output.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try #require(bitmap.representation(using: .png, properties: [:])).write(to: output)
+    }
+
+    try snapshot("shelf-preview", appearance: .darkAqua)
+    try snapshot("shelf-light-preview", appearance: .aqua)
 
     model.editing = model.clips[0]
     model.editDraft = "Nai Harn beach, Phuket"
     model.focusToken += 1
-    RunLoop.main.run(until: Date().addingTimeInterval(0.3))
-    let editBitmap = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
-    host.cacheDisplay(in: host.bounds, to: editBitmap)
-    try #require(editBitmap.representation(using: .png, properties: [:]))
-        .write(to: output.deletingLastPathComponent().appendingPathComponent("shelf-edit-preview.png"))
+    try snapshot("shelf-edit-preview", appearance: .darkAqua)
     #expect(model.clips.count == samples.count)
 }

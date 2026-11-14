@@ -150,10 +150,9 @@ struct ShelfView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(VisualEffect())
+        .background(VisualEffect(material: .popover))
         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).strokeBorder(.white.opacity(0.14)))
-        .environment(\.colorScheme, .dark)
+        .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).strokeBorder(.primary.opacity(0.14)))
         .onChange(of: model.query) { actions.reload() }
         .onChange(of: model.focusToken, initial: true) {
             focus = model.editing != nil ? .editor : model.naming != nil ? .name : .search
@@ -176,7 +175,7 @@ struct ShelfView: View {
             }
             .font(.system(size: 13))
             .padding(.horizontal, 10).frame(width: 220, height: 30)
-            .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
+            .background(.primary.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
 
             filterMenu
 
@@ -274,7 +273,7 @@ struct ShelfView: View {
             Text(title).font(.system(size: 13, weight: .medium)).lineLimit(1)
         }
         .padding(.horizontal, 11).frame(height: 28)
-        .background(model.filter == filter ? .white.opacity(0.15) : .clear, in: Capsule())
+        .background(model.filter == filter ? Color.primary.opacity(0.15) : .clear, in: Capsule())
         .overlay(Capsule().strokeBorder(Color.accentColor, lineWidth: dropTarget == filter ? 2 : 0))
         .contentShape(Capsule())
         // A tap gesture and not a Button, because a Button takes the mouse press and the chip could not be dragged.
@@ -305,7 +304,7 @@ struct ShelfView: View {
                 .textFieldStyle(.plain).focused($focus, equals: .name)
                 .font(.system(size: 13))
                 .padding(.horizontal, 10).frame(width: 220, height: 30)
-                .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
+                .background(.primary.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
                 .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Color.accentColor))
             Text("↩ save    esc cancel").font(.system(size: 11)).foregroundStyle(.secondary)
         }
@@ -316,7 +315,7 @@ struct ShelfView: View {
             TextEditor(text: $model.editDraft)
                 .font(.system(size: 13)).focused($focus, equals: .editor)
                 .scrollContentBackground(.hidden).padding(8)
-                .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 10))
+                .background(.primary.opacity(0.08), in: RoundedRectangle(cornerRadius: 10))
             HStack(spacing: 10) {
                 if let error = model.editError {
                     Text(error).font(.system(size: 11)).foregroundStyle(.red)
@@ -424,7 +423,7 @@ struct ShelfView: View {
         }
         .padding(.horizontal, 16).padding(.vertical, 8)
         .frame(maxWidth: .infinity)
-        .background(.black.opacity(0.25))
+        .background(.primary.opacity(0.08))
     }
 }
 
@@ -469,11 +468,11 @@ struct ClipCard: View {
             .frame(maxWidth: .infinity).padding(.horizontal, 10).padding(.bottom, 9)
         }
         .frame(width: 216, height: 208)
-        .background(Color(white: 0.11))
+        .background(Color(nsColor: .textBackgroundColor))
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .strokeBorder(isSelected ? Color.white : frameColor ?? .white.opacity(0.08),
+                .strokeBorder(isSelected ? Color.primary : frameColor ?? .primary.opacity(0.12),
                               lineWidth: isSelected ? 3 : frameColor == nil ? 1 : 2)
         )
     }
@@ -565,7 +564,7 @@ enum Thumbnails {
 }
 
 struct VisualEffect: NSViewRepresentable {
-    var material: NSVisualEffectView.Material = .hudWindow
+    let material: NSVisualEffectView.Material
 
     func makeNSView(context: Context) -> NSVisualEffectView {
         let view = NSVisualEffectView()
