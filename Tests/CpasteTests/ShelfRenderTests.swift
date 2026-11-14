@@ -14,7 +14,10 @@ let rendersPreviews = ProcessInfo.processInfo.environment["CPASTE_RENDER"] != ni
     let store = try ClipStore(directory: directory)
     let image = NSImage(size: NSSize(width: 1284, height: 742), flipped: false) { rect in
         NSColor.systemTeal.setFill(); rect.fill()
-        NSColor.white.setFill(); NSRect(x: 80, y: 80, width: 600, height: 300).fill()
+        NSColor.white.setFill(); NSRect(x: 80, y: 80, width: 900, height: 300).fill()
+        ("Invoice 48213907 total" as NSString).draw(at: NSPoint(x: 110, y: 190), withAttributes: [
+            .font: NSFont.systemFont(ofSize: 64), .foregroundColor: NSColor.black,
+        ])
         return true
     }
     let now = Date()
@@ -26,6 +29,10 @@ let rendersPreviews = ProcessInfo.processInfo.environment["CPASTE_RENDER"] != ni
         (.image(image.tiffRepresentation!), "com.apple.screencaptureui", -1140),
         (.text("Thavorn Beach Village Resort & Spa Phuket"), "com.google.Chrome", -960),
         (.text("kamala beach estate"), "com.google.Chrome", -300),
+        (.text("#4C8DF6"), "com.apple.Safari", -250),
+        (.text("git log --oneline -5\nswift test\n./scripts/build-app.sh"), "com.apple.Terminal", -200),
+        (.file(path: "/Applications/Safari.app"), "com.apple.finder", -150),
+        (.link(URL(string: "https://github.com/yoavsraya/Cpaste/releases")!), "com.apple.Safari", -100),
     ]
     for (capture, source, offset) in samples {
         try store.insert(capture, sourceBundleID: source, at: now.addingTimeInterval(offset))
@@ -38,15 +45,14 @@ let rendersPreviews = ProcessInfo.processInfo.environment["CPASTE_RENDER"] != ni
 
     let model = ShelfModel()
     model.categories = try store.categories()
+    TextRecognizer.readPendingImages(in: store)
     try store.setPinned(clipIDs: [try #require(try store.search("Nai", in: .all, limit: 1).first).id], to: true)
     try store.rename(clipID: try #require(try store.search("kamala", in: .all, limit: 1).first).id, to: "Hotel shortlist")
     model.clips = try store.search("", in: .all, limit: 200)
     model.sourceApps = try store.sourceBundleIDs()
     model.selection = 1
-    model.toggleMark(at: 3)
-    model.toggleMark(at: 5)
     let host = NSHostingView(rootView: ShelfView(model: model, imageFiles: store.imageFiles, actions: ShelfActions()))
-    host.frame = NSRect(x: 0, y: 0, width: 1440, height: 300)
+    host.frame = NSRect(x: 0, y: 0, width: 1900, height: 300)
     let window = NSWindow(contentRect: host.frame, styleMask: .borderless, backing: .buffered, defer: false)
     window.contentView = host
 

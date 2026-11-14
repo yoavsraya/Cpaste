@@ -351,7 +351,8 @@ public final class ClipStore: Sendable {
         default: throw ClipStoreError.malformedRow(id: id)
         }
         return Clip(id: id, content: content, contentHash: row["contentHash"], sourceBundleID: row["sourceBundleID"],
-                    copiedAt: row["copiedAt"], lastUsedAt: row["lastUsedAt"], categoryID: row["categoryID"], title: row["title"], isPinned: row["isPinned"])
+                    copiedAt: row["copiedAt"], lastUsedAt: row["lastUsedAt"], categoryID: row["categoryID"], imageText: content.kind == .image ? text : nil,
+                    title: row["title"], isPinned: row["isPinned"])
     }
 
     private static var migrator: DatabaseMigrator {

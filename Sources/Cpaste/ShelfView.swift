@@ -488,19 +488,15 @@ struct ClipCard: View {
             }
             .foregroundStyle(.white)
             .padding(.horizontal, 12).frame(height: 46)
-            .background(frameColor ?? SourceApp.color(bundleID: clip.sourceBundleID) ?? kind.color)
+            .background(headerColor)
 
             content
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                .padding(12)
 
-            HStack(spacing: 5) {
-                if let category {
-                    Circle().fill(Color(hex: category.colorHex)).frame(width: 7, height: 7)
-                }
+            if let detail {
                 Text(detail).font(.system(size: 11)).foregroundStyle(.secondary).lineLimit(1)
+                    .frame(maxWidth: .infinity).padding(.horizontal, 10).padding(.vertical, 7)
             }
-            .frame(maxWidth: .infinity).padding(.horizontal, 10).padding(.bottom, 9)
         }
         .frame(width: size.width, height: size.height)
         .background(Color(nsColor: .textBackgroundColor))
@@ -520,38 +516,112 @@ struct ClipCard: View {
     @ViewBuilder private var content: some View {
         switch clip.content {
         case .text(let string):
-            Text(string.prefix(400)).font(.system(size: 13)).foregroundStyle(.primary)
+            switch flavor {
+            case .color(let red, let green, let blue):
+                // Black or white text, whichever reads on the swatch.
+                let isLight = 0.299 * red + 0.587 * green + 0.114 * blue > 0.6
+                Text(string.trimmingCharacters(in: .whitespacesAndNewlines))
+                    .font(.system(size: 14, weight: .medium, design: .monospaced))
+                    .foregroundStyle(isLight ? Color.black : Color.white)
+                    .padding(10).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
+                    .background(Color(red: red, green: green, blue: blue))
+            case .code:
+                Text(string.prefix(600)).font(.system(size: 11.5, design: .monospaced))
+                    .padding(9).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    .background(.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 7))
+                    .padding([.horizontal, .top], 10)
+            case .plain:
+                let isShort = string.count <= 40 && !string.contains(where: \.isNewline)
+                Text(string.prefix(400)).font(.system(size: isShort ? 15 : 13, weight: isShort ? .medium : .regular))
+                    .padding([.horizontal, .top], 12)
+            }
         case .link(let url):
-            Text(url.absoluteString).font(.system(size: 13)).foregroundStyle(.primary).underline()
+            let host = url.host.map { $0.hasPrefix("www.") ? String($0.dropFirst(4)) : $0 } ?? url.absoluteString
+            VStack(alignment: .leading, spacing: 3) {
+                Text(host.prefix(1).uppercased()).font(.system(size: 13, weight: .bold)).foregroundStyle(.white)
+                    .frame(width: 26, height: 26).background(headerColor, in: Circle()).padding(.bottom, 6)
+                Text(host).font(.system(size: 15, weight: .semibold)).lineLimit(2)
+                let rest = url.path + (url.query.map { "?\($0)" } ?? "")
+                if rest.count > 1 {
+                    Text(rest).font(.system(size: 11.5)).foregroundStyle(.secondary)
+                }
+            }
+            .padding(12)
         case .file(let path):
-            Label((path as NSString).lastPathComponent, systemImage: "doc").font(.system(size: 13))
+            let info = FileInfo.of(path: path)
+            VStack(spacing: 5) {
+                Image(nsImage: info.icon).resizable().frame(width: 52, height: 52)
+                Text((path as NSString).lastPathComponent).font(.system(size: 13, weight: .semibold))
+                    .lineLimit(2).multilineTextAlignment(.center)
+                Text(info.detail).font(.system(size: 11)).foregroundStyle(.secondary).lineLimit(1)
+            }
+            .padding(10).frame(maxWidth: .infinity, maxHeight: .infinity)
         case .image(let sha, _, _, _):
             if let image = Thumbnails.image(at: imageFiles.thumbnailURL(sha256: sha)) {
-                Image(nsImage: image).resizable().scaledToFit()
-                    .clipShape(RoundedRectangle(cornerRadius: 6))
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                // A clear overlay sized by the card, so a wide or tall picture is cropped and never stretches the card.
+                Color.clear.overlay(Image(nsImage: image).resizable().scaledToFill()).clipped()
             } else {
-                Label("Image file is missing", systemImage: "exclamationmark.triangle").font(.system(size: 12))
+                Label("Image file is missing", systemImage: "exclamationmark.triangle").font(.system(size: 12)).padding(12)
             }
         }
     }
 
+    private var flavor: TextFlavor {
+        if case .text(let string) = clip.content { TextFlavor(string) } else { .plain }
+    }
+
+    private var headerColor: Color {
+        frameColor ?? SourceApp.color(bundleID: clip.sourceBundleID) ?? kind.color
+    }
+
     private var kind: (title: String, color: Color) {
-        switch clip.content {
-        case .text: ("Text", Color(red: 0.31, green: 0.47, blue: 0.85))
-        case .link: ("Link", Color(red: 0.54, green: 0.39, blue: 0.82))
-        case .image: ("Image", Color(red: 0.79, green: 0.34, blue: 0.49))
-        case .file: ("File", Color(red: 0.25, green: 0.55, blue: 0.50))
+        switch (clip.content, flavor) {
+        case (.text, .color): ("Colour", Color(red: 0.31, green: 0.47, blue: 0.85))
+        case (.text, .code): ("Code", Color(red: 0.31, green: 0.47, blue: 0.85))
+        case (.text, .plain): ("Text", Color(red: 0.31, green: 0.47, blue: 0.85))
+        case (.link, _): ("Link", Color(red: 0.54, green: 0.39, blue: 0.82))
+        case (.image, _): ("Image", Color(red: 0.79, green: 0.34, blue: 0.49))
+        case (.file, _): ("File", Color(red: 0.25, green: 0.55, blue: 0.50))
         }
     }
 
-    private var detail: String {
-        switch clip.content {
-        case .text(let string): "\(string.count) characters"
-        case .link(let url): url.host ?? "link"
-        case .file(let path): (path as NSString).deletingLastPathComponent
-        case .image(_, let width, let height, _): "\(width) × \(height)"
+    /// The grey line under the content. Nil when the content already says everything.
+    private var detail: String? {
+        switch (clip.content, flavor) {
+        case (.text, .color), (.link, _), (.file, _): return nil
+        case (.text(let string), .code):
+            let lines = string.split(whereSeparator: \.isNewline).count
+            return lines == 1 ? "1 line" : "\(lines) lines"
+        case (.text(let string), .plain): return "\(string.count) characters"
+        case (.image(_, let width, let height, _), _):
+            let size = "\(width) × \(height)"
+            let words = (clip.imageText ?? "").split(whereSeparator: \.isWhitespace).prefix(4).joined(separator: " ")
+            return words.isEmpty ? size : "\(size) · “\(words)”"
         }
+    }
+}
+
+/// The Finder icon, folder and size of a copied file, cached because cards redraw often.
+@MainActor
+enum FileInfo {
+    private static var cache: [String: (icon: NSImage, detail: String)] = [:]
+
+    static func of(path: String) -> (icon: NSImage, detail: String) {
+        if let cached = cache[path] { return cached }
+        let folder = ((path as NSString).deletingLastPathComponent as NSString).lastPathComponent
+        let detail: String
+        let attributes = try? FileManager.default.attributesOfItem(atPath: path)
+        if attributes == nil {
+            detail = "\(folder) · file is gone"
+        } else if attributes?[.type] as? FileAttributeType == .typeRegular, let bytes = attributes?[.size] as? Int64 {
+            detail = "\(folder) · \(ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file))"
+        } else {
+            // A folder or an app reports the size of its directory entry, which means nothing to the user.
+            detail = folder
+        }
+        let info = (icon: NSWorkspace.shared.icon(forFile: path), detail: detail)
+        cache[path] = info
+        return info
     }
 }
 

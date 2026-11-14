@@ -1,0 +1,208 @@
+<title>Cpaste clip cards</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one column of sections. Each section is a real shelf strip with the same six clips, so directions compare card for card. */
+:root {
+  --bg: #eef2f0; --panel: #e2e8e5; --fg: #14211f; --muted: #5d6b68; --line: #cdd6d2;
+  --shelf: #d9dfdc; --card: #ffffff; --card-fg: #1b2523; --card-muted: #6c7774; --inset: #f1f4f3;
+  --ring: #14211f; --mint: #1f7a5c; --mint-soft: #cfeedd; --teal: #123d3a;
+  --display: "Space Grotesk", "Avenir Next", system-ui, sans-serif;
+  --body: Inter, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, "Helvetica Neue", Arial, sans-serif;
+  --mono: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f1716; --panel: #162120; --fg: #e9f1ee; --muted: #93a3a0;
+  --line: #263432; --shelf: #2a302f; --card: #1b1e1e; --card-fg: #eef2f1; --card-muted: #98a3a1; --inset: #111414;
+  --ring: #ffffff; --mint: #b6e8ce; --mint-soft: #1d3a31; --teal: #123d3a; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0f1716; --panel: #162120; --fg: #e9f1ee; --muted: #93a3a0; --line: #263432;
+  --shelf: #2a302f; --card: #1b1e1e; --card-fg: #eef2f1; --card-muted: #98a3a1; --inset: #111414;
+  --ring: #ffffff; --mint: #b6e8ce; --mint-soft: #1d3a31; --teal: #123d3a; color-scheme: dark }
+
+body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.55; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-block: 40px 72px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; gap: 44px; }
+h1 { font-family: var(--display); font-weight: 600; font-size: clamp(28px, 4vw, 40px); line-height: 1.1; margin: 0; text-wrap: balance; }
+h2 { font-family: var(--display); font-weight: 600; font-size: 22px; margin: 0; text-wrap: balance; }
+h3 { font-family: var(--display); font-weight: 500; font-size: 16px; margin: 0; }
+p { margin: 0; max-width: 65ch; }
+.lede { color: var(--muted); font-size: 16px; }
+.tag { font-family: var(--ui); font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--mint); }
+.head { display: flex; flex-direction: column; gap: 8px; }
+.pick { display: inline-flex; align-items: center; gap: 8px; font-family: var(--ui); font-size: 12px; font-weight: 600;
+  background: var(--mint-soft); color: var(--mint); padding: 4px 10px; border-radius: 999px; align-self: flex-start; }
+section { display: flex; flex-direction: column; gap: 16px; }
+.notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px 28px; color: var(--muted); font-size: 14px; }
+.notes b { color: var(--fg); font-weight: 600; }
+
+/* The shelf strip */
+.shelf { background: var(--shelf); border: 1px solid var(--line); border-radius: 18px; padding: 14px; overflow-x: auto; }
+.row { display: flex; gap: 12px; width: max-content; font-family: var(--ui); }
+.card { width: 204px; height: 200px; border-radius: 14px; background: var(--card); color: var(--card-fg);
+  display: flex; flex-direction: column; overflow: hidden; position: relative; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--card-fg) 10%, transparent); flex: none; }
+.card.sel { box-shadow: 0 0 0 3px var(--ring); }
+.hd { height: 44px; padding: 0 11px; display: flex; align-items: center; justify-content: space-between; color: #fff; flex: none; }
+.hd .t { font-size: 13.5px; font-weight: 600; line-height: 1.15; }
+.hd .s { font-size: 10.5px; opacity: .88; }
+.app { width: 28px; height: 28px; border-radius: 7px; background: #fff; display: grid; place-items: center; font-size: 13px; font-weight: 700; flex: none; }
+.app.sm { width: 18px; height: 18px; border-radius: 5px; font-size: 9px; }
+.bd { padding: 11px; font-size: 12.5px; line-height: 1.4; flex: 1; min-height: 0; overflow: hidden; }
+.ft { font-size: 10.5px; color: var(--card-muted); text-align: center; padding: 0 10px 8px; flex: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.u { text-decoration: underline; word-break: break-all; }
+.shot { height: 100%; border-radius: 6px; background: linear-gradient(135deg, #3aa7b8, #6fd3c9); position: relative; }
+.shot::after { content: ""; position: absolute; left: 10%; bottom: 12%; width: 48%; height: 40%; background: #fff; border-radius: 3px; }
+.rtl { direction: rtl; text-align: right; }
+
+/* App and type colours, as the app picks them today */
+.c-chrome { background: #cc2521; } .c-claude { background: #cc6041; } .c-notes { background: #c9a92f; }
+.c-finder { background: #0b7bcc; } .c-term { background: #4f78d9; } .c-shot { background: #c9567d; } .c-figma { background: #8a63d1; }
+.i-chrome { color: #cc2521; } .i-claude { color: #cc6041; } .i-notes { color: #a8860f; } .i-finder { color: #0b7bcc; }
+.i-term { color: #333; } .i-shot { color: #c9567d; } .i-figma { color: #8a63d1; }
+
+/* Direction 1: content-aware bodies */
+.domain { font-size: 15px; font-weight: 600; }
+.path { color: var(--card-muted); font-size: 11.5px; word-break: break-all; margin-top: 3px; }
+.fav { width: 26px; height: 26px; border-radius: 50%; background: #003b95; color: #fff; display: grid; place-items: center; font-weight: 700; font-size: 13px; margin-bottom: 9px; }
+.bleed { padding: 0; }
+.bleed .shot { border-radius: 0; }
+.swatch { height: 100%; background: #4c8df6; display: flex; align-items: flex-end; padding: 10px; color: #fff; font-family: var(--mono); font-size: 14px; font-weight: 500; }
+.code { font-family: var(--mono); font-size: 11.5px; background: var(--inset); border-radius: 7px; padding: 9px; height: 100%; white-space: pre; overflow: hidden; }
+.code .k { color: var(--mint); }
+.file { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px; height: 100%; text-align: center; }
+.doc { width: 44px; height: 54px; border-radius: 5px; background: #e5484d; color: #fff; display: grid; place-items: end center; font-size: 10px; font-weight: 700; padding-bottom: 6px; position: relative; }
+.doc::before { content: ""; position: absolute; top: 0; right: 0; border-style: solid; border-width: 0 12px 12px 0; border-color: transparent var(--card) transparent transparent; }
+
+/* Direction 2: quiet header */
+.q { border-top: 4px solid var(--c); }
+.q .qh { display: flex; align-items: center; gap: 7px; padding: 9px 11px 0; font-size: 11px; font-weight: 600; flex: none; }
+.q .qh .k { color: var(--c); filter: saturate(1.1); }
+.q .qh .when { margin-left: auto; color: var(--card-muted); font-weight: 400; }
+.q .bd { padding-top: 8px; font-size: 13px; }
+
+/* Direction 3: tinted */
+.tint { background: color-mix(in srgb, var(--c) 16%, var(--card)); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--c) 55%, transparent); }
+.tint.sel { box-shadow: 0 0 0 3px var(--ring); }
+.tint .qh { display: flex; align-items: center; gap: 7px; padding: 11px 11px 0; font-size: 12px; font-weight: 600; flex: none; }
+.tint .qh .when { margin-left: auto; color: var(--card-muted); font-weight: 400; font-size: 10.5px; }
+
+/* Details */
+.details { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 22px; }
+.detail { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.detail p { color: var(--muted); font-size: 14px; }
+.stage { background: var(--shelf); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: grid; place-items: center; font-family: var(--ui); }
+.badge { position: absolute; top: -7px; left: -7px; background: var(--card-fg); color: var(--card); font-size: 11px; font-weight: 700; border-radius: 7px; padding: 2px 6px; z-index: 2; }
+.card.over { overflow: visible; }
+.card.over .hd { border-radius: 14px 14px 0 0; }
+.actions { position: absolute; right: 8px; bottom: 8px; display: flex; gap: 4px; background: color-mix(in srgb, var(--card) 88%, transparent); border-radius: 9px; padding: 4px; box-shadow: 0 2px 10px rgb(0 0 0 / .25); }
+.actions span { width: 24px; height: 24px; border-radius: 6px; display: grid; place-items: center; font-size: 12px; background: var(--inset); }
+.card.mint { box-shadow: 0 0 0 3px var(--mint); }
+.more { position: absolute; left: 0; right: 0; bottom: 0; height: 46px; background: linear-gradient(transparent, var(--card) 70%); display: flex; align-items: flex-end; justify-content: center; padding-bottom: 7px; font-size: 10.5px; color: var(--card-muted); }
+.ask { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 8px; }
+</style>
+
+<div class="wrap">
+  <header class="head">
+    <span class="tag">Cpaste · design options</span>
+    <h1>Three directions for the clip cards</h1>
+    <p class="lede">Each strip below shows the same six clips, so you can compare card for card. Scroll a strip sideways to see all of them. The page follows your light or dark setting, the way the shelf now does.</p>
+  </header>
+
+  <section>
+    <div class="head"><span class="tag">Today</span><h2>What the cards look like now</h2>
+      <p class="lede">Every card uses the same layout. A coloured header, plain text below, a grey line at the bottom. A link, a colour code and a command all look like text.</p></div>
+    <div class="shelf"><div class="row">
+      <div class="card sel"><div class="hd c-chrome"><div><div class="t">Text</div><div class="s">5 minutes ago</div></div><div class="app i-chrome">C</div></div><div class="bd">kamala beach estate</div><div class="ft">19 characters</div></div>
+      <div class="card"><div class="hd c-chrome"><div><div class="t">Link</div><div class="s">22 minutes ago</div></div><div class="app i-chrome">C</div></div><div class="bd"><span class="u">https://www.booking.com/city/th/phuket.html</span></div><div class="ft">www.booking.com</div></div>
+      <div class="card"><div class="hd c-shot"><div><div class="t">Image</div><div class="s">19 minutes ago</div></div><div class="app i-shot">◩</div></div><div class="bd"><div class="shot"></div></div><div class="ft">1284 × 742</div></div>
+      <div class="card"><div class="hd c-figma"><div><div class="t">Text</div><div class="s">1 hour ago</div></div><div class="app i-figma">F</div></div><div class="bd">#4C8DF6</div><div class="ft">7 characters</div></div>
+      <div class="card"><div class="hd c-term"><div><div class="t">Text</div><div class="s">2 hours ago</div></div><div class="app i-term">&gt;_</div></div><div class="bd">git log --oneline -5<br>swift test<br>./scripts/build-app.sh</div><div class="ft">54 characters</div></div>
+      <div class="card"><div class="hd c-finder"><div><div class="t">File</div><div class="s">23 minutes ago</div></div><div class="app i-finder">☺</div></div><div class="bd">▯ plan.pdf</div><div class="ft">/Users/you/Desktop</div></div>
+    </div></div>
+  </section>
+
+  <section>
+    <div class="head"><span class="tag">Direction 1</span><h2>Content-aware cards</h2>
+      <span class="pick">★ My recommendation</span>
+      <p class="lede">Keep the coloured header you know. Change the body so each kind of clip shows itself in the way that is fastest to recognise.</p></div>
+    <div class="shelf"><div class="row">
+      <div class="card sel"><div class="hd c-chrome"><div><div class="t">Text</div><div class="s">5 minutes ago</div></div><div class="app i-chrome">C</div></div><div class="bd" style="font-size:15px;font-weight:500">kamala beach estate</div><div class="ft">19 characters</div></div>
+      <div class="card"><div class="hd c-chrome"><div><div class="t">Link</div><div class="s">22 minutes ago</div></div><div class="app i-chrome">C</div></div><div class="bd"><div class="fav">B</div><div class="domain">booking.com</div><div class="path">/city/th/phuket.html</div></div></div>
+      <div class="card"><div class="hd c-shot"><div><div class="t">Image</div><div class="s">19 minutes ago</div></div><div class="app i-shot">◩</div></div><div class="bd bleed"><div class="shot"></div></div><div class="ft" style="padding-top:6px">1284 × 742 · “Invoice 48213907”</div></div>
+      <div class="card"><div class="hd c-figma"><div><div class="t">Colour</div><div class="s">1 hour ago</div></div><div class="app i-figma">F</div></div><div class="bd bleed"><div class="swatch">#4C8DF6</div></div></div>
+      <div class="card"><div class="hd c-term"><div><div class="t">Code</div><div class="s">2 hours ago</div></div><div class="app i-term">&gt;_</div></div><div class="bd"><div class="code"><span class="k">git</span> log --oneline -5
+<span class="k">swift</span> test
+./scripts/build-app.sh</div></div><div class="ft">3 lines</div></div>
+      <div class="card"><div class="hd c-finder"><div><div class="t">File</div><div class="s">23 minutes ago</div></div><div class="app i-finder">☺</div></div><div class="bd"><div class="file"><div class="doc">PDF</div><div style="font-weight:600">plan.pdf</div><div style="color:var(--card-muted);font-size:11px">Desktop · 248 KB</div></div></div></div>
+    </div></div>
+    <div class="notes">
+      <div><b>Link.</b> The site name is large and the path is small. No underlined wall of URL.</div>
+      <div><b>Image.</b> Fills the card edge to edge. The footer shows a few words read from the picture.</div>
+      <div><b>Colour.</b> A hex or rgb value becomes a swatch of that colour.</div>
+      <div><b>Code.</b> Commands and code use a monospace font and keep their line breaks.</div>
+      <div><b>File.</b> The file's own icon, its folder and its size.</div>
+      <div><b>Short text.</b> One short line is shown larger, so it reads at a glance.</div>
+    </div>
+  </section>
+
+  <section>
+    <div class="head"><span class="tag">Direction 2</span><h2>Quiet header</h2>
+      <p class="lede">The big coloured block shrinks to a thin stripe. The app icon and the type move onto one small line. The clip itself gets about 30% more room, and the shelf looks calmer.</p></div>
+    <div class="shelf"><div class="row">
+      <div class="card q sel" style="--c:#cc2521"><div class="qh"><div class="app sm i-chrome" style="background:var(--inset)">C</div><span class="k">Text</span><span class="when">5 min</span></div><div class="bd">kamala beach estate</div><div class="ft">19 characters</div></div>
+      <div class="card q" style="--c:#cc2521"><div class="qh"><div class="app sm i-chrome" style="background:var(--inset)">C</div><span class="k">Link</span><span class="when">22 min</span></div><div class="bd"><div class="domain">booking.com</div><div class="path">/city/th/phuket.html</div></div></div>
+      <div class="card q" style="--c:#c9567d"><div class="qh"><div class="app sm i-shot" style="background:var(--inset)">◩</div><span class="k">Image</span><span class="when">19 min</span></div><div class="bd"><div class="shot"></div></div><div class="ft">1284 × 742</div></div>
+      <div class="card q" style="--c:#8a63d1"><div class="qh"><div class="app sm i-figma" style="background:var(--inset)">F</div><span class="k">Colour</span><span class="when">1 h</span></div><div class="bd"><div class="swatch" style="border-radius:7px">#4C8DF6</div></div></div>
+      <div class="card q" style="--c:#4f78d9"><div class="qh"><div class="app sm i-term" style="background:var(--inset)">&gt;_</div><span class="k">Code</span><span class="when">2 h</span></div><div class="bd"><div class="code"><span class="k">git</span> log --oneline -5
+<span class="k">swift</span> test
+./scripts/build-app.sh</div></div></div>
+      <div class="card q" style="--c:#0b7bcc"><div class="qh"><div class="app sm i-finder" style="background:var(--inset)">☺</div><span class="k">File</span><span class="when">23 min</span></div><div class="bd"><div class="file"><div class="doc">PDF</div><div style="font-weight:600">plan.pdf</div></div></div></div>
+    </div></div>
+    <div class="notes">
+      <div><b>Gain.</b> More text fits, and a shelf full of cards is less loud.</div>
+      <div><b>Cost.</b> The colour that tells you "this is from Chrome" or "this is in Work" is much smaller. It is the thing you said you like in Paste.</div>
+    </div>
+  </section>
+
+  <section>
+    <div class="head"><span class="tag">Direction 3</span><h2>Tinted cards</h2>
+      <p class="lede">No header block at all. The whole card takes a light wash of the app or category colour, with a border in the full colour.</p></div>
+    <div class="shelf"><div class="row">
+      <div class="card tint sel" style="--c:#cc2521"><div class="qh"><div class="app sm i-chrome">C</div><span>Text</span><span class="when">5 min</span></div><div class="bd">kamala beach estate</div><div class="ft">19 characters</div></div>
+      <div class="card tint" style="--c:#cc2521"><div class="qh"><div class="app sm i-chrome">C</div><span>Link</span><span class="when">22 min</span></div><div class="bd"><div class="domain">booking.com</div><div class="path">/city/th/phuket.html</div></div></div>
+      <div class="card tint" style="--c:#c9567d"><div class="qh"><div class="app sm i-shot">◩</div><span>Image</span><span class="when">19 min</span></div><div class="bd"><div class="shot"></div></div><div class="ft">1284 × 742</div></div>
+      <div class="card tint" style="--c:#8a63d1"><div class="qh"><div class="app sm i-figma">F</div><span>Colour</span><span class="when">1 h</span></div><div class="bd"><div class="swatch" style="border-radius:7px">#4C8DF6</div></div></div>
+      <div class="card tint" style="--c:#4f78d9"><div class="qh"><div class="app sm i-term">&gt;_</div><span>Code</span><span class="when">2 h</span></div><div class="bd"><div class="code"><span class="k">git</span> log --oneline -5
+<span class="k">swift</span> test
+./scripts/build-app.sh</div></div></div>
+      <div class="card tint" style="--c:#0b7bcc"><div class="qh"><div class="app sm i-finder">☺</div><span>File</span><span class="when">23 min</span></div><div class="bd"><div class="file"><div class="doc">PDF</div><div style="font-weight:600">plan.pdf</div></div></div></div>
+    </div></div>
+    <div class="notes">
+      <div><b>Gain.</b> Colour stays strong and the card still has room for content. It looks the most modern of the three.</div>
+      <div><b>Cost.</b> The furthest from what you are used to. Text sits on a coloured ground, so pale colours such as yellow need care to stay readable.</div>
+    </div>
+  </section>
+
+  <section>
+    <div class="head"><span class="tag">Small details</span><h2>Extras that work with any direction</h2>
+      <p class="lede">Each one is independent. Pick any of them.</p></div>
+    <div class="details">
+      <div class="detail"><div class="stage"><div class="card over"><span class="badge">⌘2</span><div class="hd c-claude"><div><div class="t">Text</div><div class="s">8 minutes ago</div></div><div class="app i-claude">✳</div></div><div class="bd">Thavorn Beach Village Resort &amp; Spa Phuket</div><div class="ft">41 characters</div></div></div>
+        <h3>Number badges</h3><p>Hold the quick-paste key and the first nine cards show their number, so you know which digit pastes what.</p></div>
+      <div class="detail"><div class="stage"><div class="card mint"><div class="hd c-notes"><div><div class="t">Hotel shortlist</div><div class="s">25 minutes ago</div></div><div class="app i-notes">≡</div></div><div class="bd">Nai Harn</div><div class="ft">8 characters</div></div></div>
+        <h3>Mint selection ring</h3><p>The selected card gets a ring in the mint from your icon, in place of plain white or black. It ties the shelf to the brand.</p></div>
+      <div class="detail"><div class="stage"><div class="card"><div class="hd c-chrome"><div><div class="t">Text</div><div class="s">16 minutes ago</div></div><div class="app i-chrome">C</div></div><div class="bd">Kamala is quieter than Patong and closer to the airport. The estate has four villas, each with a private pool, and a shared kitchen on the ground floor that stays open late.</div><div class="more">↓ 6 more lines · Space to preview</div></div></div>
+        <h3>Fade for long text</h3><p>A long clip fades out at the bottom and says how much is hidden, instead of being cut mid-line.</p></div>
+      <div class="detail"><div class="stage"><div class="card"><div class="hd c-chrome"><div><div class="t">Text</div><div class="s">5 minutes ago</div></div><div class="app i-chrome">C</div></div><div class="bd rtl">מספר הזמנה 48213907</div><div class="ft">19 characters</div><div class="actions"><span title="Copy">⧉</span><span title="Pin">📌</span><span title="Edit">✎</span></div></div></div>
+        <h3>Hover actions</h3><p>Point at a card and three small buttons appear for copy, pin and edit. No need to remember the shortcuts or right-click.</p></div>
+    </div>
+  </section>
+
+  <div class="ask">
+    <h2>What I need from you</h2>
+    <p>Pick one direction, 1, 2 or 3, and any of the four extras. My pick is direction 1 with the mint ring and the fade for long text. It keeps the coloured headers you chose and makes links, colours, code and files recognisable at a glance.</p>
+    <p class="lede" style="font-size:14px">App icons here are stand-in letters. The real app keeps the real icons. Colours are the ones Cpaste already picks from each app's icon.</p>
+  </div>
+</div>

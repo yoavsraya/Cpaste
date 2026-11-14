@@ -27,6 +27,7 @@ UI options for the panel are in `ui-options.html` next to this file, published a
 - Cmd+C copies a clip without pasting, Cmd+O opens a link, file or image, and a card can be dragged into another app.
 - A welcome window explains the shortcut and the Accessibility permission on the first launch only.
 - Settings shows the number of clips and the size of the history on disk.
+- Cards show each clip in its own way. A link shows its site name, a colour code shows a swatch, commands and code use a monospace font, an image fills the card with a few words read from it, and a file shows its Finder icon and size. Options considered are in `clip-design-options.html`.
 - Lives in the menu bar with no Dock icon. Starts at login when the setting is on.
 
 ## What it leaves out
