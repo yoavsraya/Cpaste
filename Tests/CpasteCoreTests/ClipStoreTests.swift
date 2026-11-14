@@ -174,3 +174,20 @@ private func texts(_ store: ClipStore) throws -> [String] {
     #expect(try texts(store) == ["b", "c", "a", "d"])
     #expect(try store.search("", in: .all, limit: 20).map(\.isPinned) == [true, true, false, false])
 }
+
+@Test func aRenamedClipIsFoundByItsNameAndStillByItsText() throws {
+    let store = try makeStore()
+    let clip = try store.insert(.text("IL62 0108 0000 0009 9999 999"), sourceBundleID: nil)
+    try store.insert(.text("something else"), sourceBundleID: nil)
+    try store.rename(clipID: clip.id, to: "  Bank account חשבון  ")
+    #expect(try store.search("", in: .all, limit: 10).first { $0.id == clip.id }?.title == "Bank account חשבון")
+    #expect(try store.search("bank", in: .all, limit: 10).map(\.id) == [clip.id])
+    #expect(try store.search("account bank", in: .all, limit: 10).map(\.id) == [clip.id])
+    #expect(try store.search("חשבון", in: .all, limit: 10).map(\.id) == [clip.id])
+    #expect(try store.search("IL62", in: .all, limit: 10).map(\.id) == [clip.id])
+    #expect(try store.search("bank holiday", in: .all, limit: 10).isEmpty)
+
+    try store.rename(clipID: clip.id, to: "   ")
+    #expect(try store.search("", in: .all, limit: 10).first { $0.id == clip.id }?.title == nil)
+    #expect(try store.search("bank", in: .all, limit: 10).isEmpty)
+}

@@ -39,6 +39,7 @@ let rendersPreviews = ProcessInfo.processInfo.environment["CPASTE_RENDER"] != ni
     let model = ShelfModel()
     model.categories = try store.categories()
     try store.setPinned(clipIDs: [try #require(try store.search("Nai", in: .all, limit: 1).first).id], to: true)
+    try store.rename(clipID: try #require(try store.search("kamala", in: .all, limit: 1).first).id, to: "Hotel shortlist")
     model.clips = try store.search("", in: .all, limit: 200)
     model.sourceApps = try store.sourceBundleIDs()
     model.selection = 1

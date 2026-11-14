@@ -172,6 +172,7 @@ final class PanelController: NSObject, NSWindowDelegate {
         case kVK_ANSI_S where command: showSaveMenu(for: model.selectedClips)
         case kVK_Delete where command: delete(model.selectedClips)
         case kVK_ANSI_E where command: selectedClip.map(beginEditing)
+        case kVK_ANSI_R where command: selectedClip.map { beginNaming(.renameClip($0)) }
         case kVK_ANSI_P where command:
             let clips = model.selectedClips
             setPinned(clips, to: !clips.allSatisfy(\.isPinned))
@@ -316,10 +317,10 @@ final class PanelController: NSObject, NSWindowDelegate {
     }
 
     private func beginNaming(_ naming: ShelfModel.Naming) {
-        if case .rename(let category) = naming {
-            model.nameDraft = category.name
-        } else {
-            model.nameDraft = ""
+        model.nameDraft = switch naming {
+        case .new: ""
+        case .rename(let category): category.name
+        case .renameClip(let clip): clip.title ?? ""
         }
         model.naming = naming
         model.focusToken += 1
@@ -332,7 +333,14 @@ final class PanelController: NSObject, NSWindowDelegate {
 
     private func commitName() {
         let name = model.nameDraft.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !name.isEmpty, let naming = model.naming else { return endNaming() }
+        guard let naming = model.naming else { return }
+        if case .renameClip(let clip) = naming {
+            let selection = model.selection
+            change("rename the clip") { try $0.rename(clipID: clip.id, to: name) }
+            model.select(at: movedSelection(from: selection, by: 0, count: model.clips.count) ?? 0)
+            return endNaming()
+        }
+        guard !name.isEmpty else { return endNaming() }
         let color = CategoryPalette.colors[model.categories.count % CategoryPalette.colors.count].hex
         change("save the category") { store in
             switch naming {
@@ -341,6 +349,8 @@ final class PanelController: NSObject, NSWindowDelegate {
                 try store.setCategory(clipIDs: clips.map(\.id), to: category.id)
             case .rename(let category):
                 try store.renameCategory(id: category.id, to: name)
+            case .renameClip:
+                break
             }
         }
         endNaming()

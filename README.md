@@ -39,6 +39,7 @@ Copy things the way you always do. Cpaste records them in the background.
 | Paste the 2nd to 9th clip directly | **Cmd+2** to **Cmd+9** |
 | Find an old clip | Just start typing |
 | Find a screenshot | Type `image` |
+| Give a clip a name | **Cmd+R**, or right-click and choose **Rename…** |
 | Edit the text of a clip | **Cmd+E**, then **Cmd+Return** to save |
 | Pin a clip to the front | **Cmd+P** |
 | Show only one type, or one app | The filter button next to the search field |

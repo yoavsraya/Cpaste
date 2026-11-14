@@ -81,8 +81,14 @@ public final class ClipStore: Sendable {
             let match = words.map { "\"\($0.replacingOccurrences(of: "\"", with: "\"\""))\"*" }.joined(separator: " ")
             // Images have no text, so typing "image" is the way to find them.
             let wantsImages = words.count == 1 && words[0].count >= 2 && "image".hasPrefix(words[0].lowercased())
-            conditions.append("(id IN (SELECT rowid FROM clip_fts WHERE clip_fts MATCH ?)\(wantsImages ? " OR kind = 'image'" : ""))")
+            // A title is short, so it is matched word by word without the index.
+            let titleMatch = words.map { _ in "instr(lower(title), lower(?)) > 0" }.joined(separator: " AND ")
+            conditions.append("""
+                (id IN (SELECT rowid FROM clip_fts WHERE clip_fts MATCH ?)\(wantsImages ? " OR kind = 'image'" : "") \
+                OR (title IS NOT NULL AND \(titleMatch)))
+                """)
             arguments.append(match)
+            arguments.append(contentsOf: words.map { String($0) })
         }
         let filterSQL = conditions.isEmpty ? "" : "WHERE " + conditions.joined(separator: " AND ")
         arguments.append(limit)
@@ -213,6 +219,14 @@ public final class ClipStore: Sendable {
         }
     }
 
+    /// Gives a clip a name. An empty name removes it.
+    public func rename(clipID: Int64, to title: String) throws {
+        let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        try database.write { db in
+            try db.execute(sql: "UPDATE clip SET title = ? WHERE id = ?", arguments: [trimmed.isEmpty ? nil : trimmed, clipID])
+        }
+    }
+
     /// The sort key that puts a clip in front of every other one. A higher position sorts first.
     private static let frontPosition = "(SELECT COALESCE(MAX(position), 0) + 1 FROM clip)"
 
@@ -326,7 +340,7 @@ public final class ClipStore: Sendable {
         default: throw ClipStoreError.malformedRow(id: id)
         }
         return Clip(id: id, content: content, contentHash: row["contentHash"], sourceBundleID: row["sourceBundleID"],
-                    copiedAt: row["copiedAt"], lastUsedAt: row["lastUsedAt"], categoryID: row["categoryID"], isPinned: row["isPinned"])
+                    copiedAt: row["copiedAt"], lastUsedAt: row["lastUsedAt"], categoryID: row["categoryID"], title: row["title"], isPinned: row["isPinned"])
     }
 
     private static var migrator: DatabaseMigrator {
@@ -369,6 +383,11 @@ public final class ClipStore: Sendable {
             // Existing clips keep their order, newest first.
             try db.execute(sql: "UPDATE clip SET position = julianday(lastUsedAt)")
             try db.create(index: "clip_position", on: "clip", columns: ["position"])
+        }
+        migrator.registerMigration("v4 clip titles") { db in
+            try db.alter(table: "clip") { t in
+                t.add(column: "title", .text)
+            }
         }
         return migrator
     }

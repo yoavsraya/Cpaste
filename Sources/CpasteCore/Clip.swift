@@ -30,6 +30,8 @@ public struct Clip: Equatable, Sendable, Identifiable {
     public let copiedAt: Date
     public var lastUsedAt: Date
     public var categoryID: Int64?
+    /// A name the user gave the clip, shown on its card in place of its type.
+    public var title: String?
     /// A pinned clip sorts before the others and never expires.
     public var isPinned: Bool
 }

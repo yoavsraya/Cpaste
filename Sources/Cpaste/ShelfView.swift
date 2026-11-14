@@ -10,6 +10,14 @@ final class ShelfModel {
     enum Naming: Equatable {
         case new(assignTo: [Clip])
         case rename(ClipCategory)
+        case renameClip(Clip)
+
+        var placeholder: String {
+            switch self {
+            case .new, .rename: "Category name"
+            case .renameClip: "Clip name"
+            }
+        }
     }
 
     var clips: [Clip] = []
@@ -293,7 +301,7 @@ struct ShelfView: View {
 
     private var namingField: some View {
         HStack(spacing: 8) {
-            TextField("Category name", text: $model.nameDraft)
+            TextField(model.naming?.placeholder ?? "", text: $model.nameDraft)
                 .textFieldStyle(.plain).focused($focus, equals: .name)
                 .font(.system(size: 13))
                 .padding(.horizontal, 10).frame(width: 220, height: 30)
@@ -383,6 +391,7 @@ struct ShelfView: View {
         let many = targets.count > 1
         if !many {
             Button("Paste") { actions.paste(clip) }
+            Button("Rename…") { actions.beginNaming(.renameClip(clip)) }
             if clip.isEditable {
                 Button("Edit…") { actions.beginEditing(clip) }
             }
@@ -430,7 +439,7 @@ struct ClipCard: View {
             HStack(alignment: .center) {
                 VStack(alignment: .leading, spacing: 1) {
                     HStack(spacing: 5) {
-                        Text(kind.title).font(.system(size: 14, weight: .semibold))
+                        Text(clip.title ?? kind.title).font(.system(size: 14, weight: .semibold)).lineLimit(1)
                         if clip.isPinned {
                             Image(systemName: "pin.fill").font(.system(size: 10))
                         }
