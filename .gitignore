@@ -1,0 +1,7 @@
+.build/
+build/
+dist/
+DerivedData/
+.worktrees/
+.DS_Store
+logs/
