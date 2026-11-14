@@ -17,6 +17,9 @@ struct Shortcut: Codable, Equatable {
         return symbols + keyLabel
     }
 
+}
+
+extension Shortcut {
     /// Nil unless the key press includes Command, Control, or Option, since a bare key would block normal typing.
     init?(event: NSEvent) {
         let flags = event.modifierFlags
@@ -30,11 +33,5 @@ struct Shortcut: Codable, Equatable {
         let typed = event.characters(byApplyingModifiers: [])?.uppercased() ?? ""
         let label = named[Int(event.keyCode)] ?? (typed.isEmpty ? "Key \(event.keyCode)" : typed)
         self.init(keyCode: UInt32(event.keyCode), carbonModifiers: modifiers, keyLabel: label)
-    }
-
-    init(keyCode: UInt32, carbonModifiers: UInt32, keyLabel: String) {
-        self.keyCode = keyCode
-        self.carbonModifiers = carbonModifiers
-        self.keyLabel = keyLabel
     }
 }
