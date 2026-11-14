@@ -232,10 +232,13 @@ struct ShelfView: View {
                         let category = model.categories.first { $0.id == clip.categoryID }
                         ClipCard(clip: clip, category: category, imageFiles: imageFiles, isSelected: model.isSelected(at: index))
                             .id(clip.id)
-                            .onTapGesture(count: 2) { actions.paste(clip) }
                             .onTapGesture {
                                 if NSEvent.modifierFlags.contains(.command) { model.toggleMark(at: index) } else { model.select(at: index) }
                             }
+                            // Simultaneous, because an exclusive double-click makes every single click wait out the double-click interval.
+                            .simultaneousGesture(TapGesture(count: 2).onEnded {
+                                if !NSEvent.modifierFlags.contains(.command) { actions.paste(clip) }
+                            })
                             .contextMenu { cardMenu(for: clip) }
                             .onDrag {
                                 model.draggedClip = clip
