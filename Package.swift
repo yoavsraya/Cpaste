@@ -10,10 +10,12 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/groue/GRDB.swift.git", from: "7.0.0"),
+        // In-app updates: a signed feed of releases and a one-click installer.
+        .package(url: "https://github.com/sparkle-project/Sparkle", from: "2.9.4"),
     ],
     targets: [
         .target(name: "CpasteCore", dependencies: [.product(name: "GRDB", package: "GRDB.swift")]),
-        .executableTarget(name: "Cpaste", dependencies: ["CpasteCore"]),
+        .executableTarget(name: "Cpaste", dependencies: ["CpasteCore", .product(name: "Sparkle", package: "Sparkle")]),
         .testTarget(name: "CpasteCoreTests", dependencies: ["CpasteCore"]),
         .testTarget(name: "CpasteTests", dependencies: ["Cpaste"]),
     ]

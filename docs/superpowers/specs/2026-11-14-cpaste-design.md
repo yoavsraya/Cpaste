@@ -1,6 +1,6 @@
 # Cpaste design
 
-Cpaste is a Mac-only clipboard manager for one person. It records every copy, text and images, and lets you search, file clips into categories, and paste from a panel that opens on Cmd+1. It replaces a paid subscription to Paste. It runs on one Mac with no account, no server, and no network access.
+Cpaste is a Mac-only clipboard manager for one person. It records every copy, text and images, and lets you search, file clips into categories, and paste from a panel that opens on Cmd+1. It replaces a paid subscription to Paste. It runs on one Mac with no account and no server. Its only network use is the update check.
 
 UI options for the panel are in `ui-options.html` next to this file, published at https://claude.ai/artifact/3DdARfiaNCMWEB1QrsKgrw. The panel uses the bottom shelf layout, option A.
 
@@ -100,6 +100,12 @@ The app is a single `Cpaste.app` in a zip. Two facts shape this.
 
 - Without a paid Apple Developer ID (99 USD per year) the app cannot be notarized. A friend's Mac blocks the first launch, and they approve it once under System Settings, Privacy & Security, Open Anyway.
 - The app is signed with a self-signed certificate that stays the same across builds. macOS ties the Accessibility grant to the signature, so a stable signature keeps the grant after an update. This is inferred from how the permission system identifies apps and is checked in phase 5.
+
+## Updates
+
+Cpaste updates itself with [Sparkle](https://sparkle-project.org). The feed is `appcast.xml` on `main`, read through `raw.githubusercontent.com`, and each entry points at the zip of a GitHub Release. Updates are signed with an EdDSA key whose private half is in the owner's login keychain under the account `cpaste`. Without that key no update can be published, so it needs a backup. `scripts/release.sh` builds, signs, updates the feed and publishes. The build number is the commit count, because Sparkle compares builds by that number.
+
+No Apple Developer ID is involved. Measured on 2026-11-14: a test copy at version 0.0.1 found a local feed, downloaded version 9.9.9, replaced itself on quit, kept a valid signature, and launched.
 
 ## Facts measured on this Mac
 

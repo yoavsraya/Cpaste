@@ -13,6 +13,8 @@ struct SettingsActions {
     var eraseHistory: () -> Void = {}
     /// A line such as "214 clips, 38 MB on disk", or nil when the store cannot be read.
     var usageSummary: () -> String? = { nil }
+    /// Nil in builds that cannot update themselves.
+    var updater: UpdaterController?
 }
 
 struct SettingsView: View {
@@ -92,7 +94,7 @@ struct SettingsView: View {
         .background(VisualEffect(material: .sidebar))
     }
 
-    private static var version: String {
+    fileprivate static var version: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "dev"
     }
 }
@@ -117,9 +119,22 @@ private struct GeneralPane: View {
     @State private var canPasteDirectly = Paster.canPasteDirectly
     @State private var isConfirmingErase = false
     @State private var usage: String?
+    @State private var checksForUpdates = false
 
     var body: some View {
         Form {
+            if let updater = actions.updater {
+                Section {
+                    Toggle(isOn: $checksForUpdates) {
+                        Text("Check for updates automatically")
+                        Caption("Once a day, Cpaste asks GitHub whether a newer version exists. Nothing about you or your clips is sent.")
+                    }
+                    .onChange(of: checksForUpdates) { _, enabled in updater.checksAutomatically = enabled }
+                    LabeledContent("Version \(SettingsView.version)") {
+                        Button("Check Now", action: updater.checkForUpdates)
+                    }
+                }
+            }
             Section {
                 Toggle("Open at login", isOn: $opensAtLogin)
                     .onChange(of: opensAtLogin) { _, enabled in
@@ -171,7 +186,10 @@ private struct GeneralPane: View {
             }
         }
         .formStyle(.grouped)
-        .onAppear { usage = actions.usageSummary() }
+        .onAppear {
+            usage = actions.usageSummary()
+            checksForUpdates = actions.updater?.checksAutomatically ?? false
+        }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             canPasteDirectly = Paster.canPasteDirectly
             usage = actions.usageSummary()

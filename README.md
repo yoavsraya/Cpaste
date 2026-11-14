@@ -7,7 +7,7 @@ Cpaste remembers everything you copy on your Mac, so you can paste it again late
 Press **Cmd+1** and a shelf slides up with your recent copies, text and images. Pick one and press Return to paste it.
 
 - It is free.
-- Everything stays on your Mac. Cpaste has no account and never connects to the internet.
+- Everything stays on your Mac. Cpaste has no account. The only time it goes online is to ask GitHub whether a newer version exists, and you can turn that off.
 - It works on macOS 14 or later.
 
 ## Install
@@ -91,7 +91,10 @@ Click the Cpaste icon in the menu bar and choose **Settings…**.
 ## Questions
 
 **Is anything I copy sent anywhere?**
-No. Your history is a folder on your Mac at `~/Library/Application Support/Cpaste/`. Cpaste makes no network connections.
+No. Your history is a folder on your Mac at `~/Library/Application Support/Cpaste/`. Nothing you copy leaves it.
+
+**How do I get new versions?**
+Cpaste checks once a day and shows **Update to Cpaste…** in its menu-bar menu when a new version is out. Click it, then **Install Update**. You can also choose **Check for Updates…** at any time. To stop the daily check, open Settings, General, and turn off **Check for updates automatically**. The check asks GitHub for a small list of versions and sends nothing about you.
 
 **How do I erase my history?**
 Open Settings and click **Erase History…**. Clips in a category stay. To remove everything, quit Cpaste and delete that folder.
@@ -117,6 +120,7 @@ swift test                 # run the tests
 CPASTE_RENDER=1 swift test # also draw the shelf and settings into build/*.png
 ./scripts/build-app.sh     # build build/Cpaste.app
 ./scripts/package.sh       # build dist/Cpaste.zip
+./scripts/release.sh 0.1.6 notes.md   # publish a release and add it to the update feed
 ```
 
 If `swift test` cannot find the `Testing` module, your Mac is using the Command Line Tools instead of Xcode. Run `export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer` first.

@@ -18,6 +18,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var hotKey: HotKey?
     private var settingsWindow: NSWindow?
     private var welcomeWindow: NSWindow?
+    private var updateMenuItem: NSMenuItem?
+    private let updater = UpdaterController()
     private var expiryTimer: Timer?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -33,6 +35,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             startExpiry()
             recognitionQueue.async { TextRecognizer.readPendingImages(in: store) }
             if !settings.hasSeenWelcome { showWelcome() }
+            updater.onAvailableVersionChange = { [weak self] version in
+                self?.updateMenuItem?.title = version.map { "Update to Cpaste \($0)…" } ?? "Check for Updates…"
+            }
+            updater.start()
+            updateMenuItem?.isHidden = !updater.isActive
             log.notice("recording clipboard into \(directory.path, privacy: .public)")
         } catch {
             log.fault("cannot open the clip store: \(String(describing: error), privacy: .public)")
@@ -49,6 +56,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let menu = NSMenu()
         openMenuItem = menu.addItem(withTitle: "Open Cpaste", action: #selector(togglePanel), keyEquivalent: "")
         menu.addItem(withTitle: "Settings…", action: #selector(showSettings), keyEquivalent: ",")
+        updateMenuItem = menu.addItem(withTitle: "Check for Updates…", action: #selector(checkForUpdates), keyEquivalent: "")
         menu.addItem(.separator())
         menu.addItem(withTitle: "Quit Cpaste", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         item.menu = menu
@@ -161,6 +169,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    @objc private func checkForUpdates() {
+        updater.checkForUpdates()
+    }
+
     @objc private func togglePanel() {
         panel?.toggle()
     }
@@ -189,7 +201,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 setShortcutActive: { [weak self] in self?.setShortcutActive($0) ?? false },
                 retentionChanged: { [weak self] in self?.expireOldClips() },
                 eraseHistory: { [weak self] in self?.eraseHistory() },
-                usageSummary: { [weak self] in self?.usageSummary() }
+                usageSummary: { [weak self] in self?.usageSummary() },
+                updater: updater.isActive ? updater : nil
             )
             let window = NSWindow(contentViewController: NSHostingController(rootView: SettingsView(settings: settings, actions: actions)))
             window.title = "Cpaste Settings"
