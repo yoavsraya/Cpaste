@@ -126,6 +126,17 @@ public final class ClipStore: Sendable {
         }
     }
 
+    /// How many clips the store holds and how many bytes its folder takes on disk, images included.
+    public func usage() throws -> (clipCount: Int, byteCount: Int) {
+        let clipCount = try database.read { db in try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM clip") ?? 0 }
+        let files = FileManager.default.enumerator(at: imageFiles.directory, includingPropertiesForKeys: [.fileSizeKey])
+        var byteCount = 0
+        while let url = files?.nextObject() as? URL {
+            byteCount += try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
+        }
+        return (clipCount, byteCount)
+    }
+
     // MARK: Text inside images
 
     /// Image clips whose text has not been read yet, newest first.

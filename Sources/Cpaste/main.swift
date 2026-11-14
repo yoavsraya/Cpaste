@@ -137,13 +137,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func eraseHistory() {
         guard let store else { return }
-        storeQueue.async {
+        // Synchronous, so the history size shown next to the button is already the new one.
+        storeQueue.sync {
             do {
                 let count = try store.eraseHistory()
                 log.notice("erased \(count) clips")
             } catch {
                 log.error("history not erased: \(String(describing: error), privacy: .public)")
             }
+        }
+    }
+
+    private func usageSummary() -> String? {
+        do {
+            guard let usage = try store?.usage() else { return nil }
+            let size = ByteCountFormatter.string(fromByteCount: Int64(usage.byteCount), countStyle: .file)
+            return "\(usage.clipCount) \(usage.clipCount == 1 ? "clip" : "clips"), \(size) on disk"
+        } catch {
+            log.error("history size not read: \(String(describing: error), privacy: .public)")
+            return nil
         }
     }
 
@@ -156,7 +168,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             let actions = SettingsActions(
                 setShortcutActive: { [weak self] in self?.setShortcutActive($0) ?? false },
                 retentionChanged: { [weak self] in self?.expireOldClips() },
-                eraseHistory: { [weak self] in self?.eraseHistory() }
+                eraseHistory: { [weak self] in self?.eraseHistory() },
+                usageSummary: { [weak self] in self?.usageSummary() }
             )
             let window = NSWindow(contentViewController: NSHostingController(rootView: SettingsView(settings: settings, actions: actions)))
             window.title = "Cpaste Settings"

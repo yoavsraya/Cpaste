@@ -191,3 +191,15 @@ private func texts(_ store: ClipStore) throws -> [String] {
     #expect(try store.search("", in: .all, limit: 10).first { $0.id == clip.id }?.title == nil)
     #expect(try store.search("bank", in: .all, limit: 10).isEmpty)
 }
+
+@Test func usageCountsClipsAndTheBytesOfTheirImages() throws {
+    let store = try makeStore()
+    try store.insert(.text("Nai Harn"), sourceBundleID: nil)
+    let textOnly = try store.usage()
+    #expect(textOnly.clipCount == 1)
+    let image = try store.insert(.image(pngData()), sourceBundleID: nil)
+    let withImage = try store.usage()
+    guard case .image(_, _, _, let imageBytes) = image.content else { return }
+    #expect(withImage.clipCount == 2)
+    #expect(withImage.byteCount >= textOnly.byteCount + imageBytes)
+}

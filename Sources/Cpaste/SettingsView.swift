@@ -11,6 +11,8 @@ struct SettingsActions {
     var setShortcutActive: (Bool) -> Bool = { _ in true }
     var retentionChanged: () -> Void = {}
     var eraseHistory: () -> Void = {}
+    /// A line such as "214 clips, 38 MB on disk", or nil when the store cannot be read.
+    var usageSummary: () -> String? = { nil }
 }
 
 struct SettingsView: View {
@@ -114,6 +116,7 @@ private struct GeneralPane: View {
     @State private var loginError: String?
     @State private var canPasteDirectly = Paster.canPasteDirectly
     @State private var isConfirmingErase = false
+    @State private var usage: String?
 
     var body: some View {
         Form {
@@ -157,6 +160,9 @@ private struct GeneralPane: View {
                 }
                 .pickerStyle(.segmented).labelsHidden()
                 .onChange(of: settings.retention) { actions.retentionChanged() }
+                if let usage {
+                    LabeledContent("History size", value: usage)
+                }
                 HStack(alignment: .firstTextBaseline) {
                     Caption("Older clips are deleted, with their images. Pinned clips and clips in a category are kept forever.")
                     Spacer()
@@ -165,11 +171,16 @@ private struct GeneralPane: View {
             }
         }
         .formStyle(.grouped)
+        .onAppear { usage = actions.usageSummary() }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             canPasteDirectly = Paster.canPasteDirectly
+            usage = actions.usageSummary()
         }
         .confirmationDialog("Erase the clipboard history?", isPresented: $isConfirmingErase) {
-            Button("Erase History", role: .destructive, action: actions.eraseHistory)
+            Button("Erase History", role: .destructive) {
+                actions.eraseHistory()
+                usage = actions.usageSummary()
+            }
         } message: {
             Text("Every clip that is not pinned or in a category is deleted, with its image. This cannot be undone.")
         }
