@@ -79,6 +79,12 @@ let rendersPreviews = ProcessInfo.processInfo.environment["CPASTE_RENDER"] != ni
     model.cardSize = .medium
     host.frame.size.height = CardSize.medium.shelfHeight
 
+    model.position = .right
+    host.frame.size = CGSize(width: CardSize.medium.drawerWidth, height: 900)
+    try snapshot("shelf-drawer-preview", appearance: .darkAqua)
+    model.position = .bottom
+    host.frame.size = CGSize(width: 1900, height: CardSize.medium.shelfHeight)
+
     model.editing = model.clips[0]
     model.editDraft = "Nai Harn beach, Phuket"
     model.focusToken += 1

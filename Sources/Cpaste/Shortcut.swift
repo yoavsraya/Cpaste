@@ -89,6 +89,36 @@ enum CardSize: String, CaseIterable {
 
     /// The shelf is the card plus the header above it and the padding below.
     var shelfHeight: CGFloat { card.height + 92 }
+
+    /// The shelf's width when it is a drawer at the side of the screen.
+    var drawerWidth: CGFloat {
+        switch self {
+        case .small: 280
+        case .medium: 320
+        case .large: 380
+        }
+    }
+
+    /// A drawer card fills the drawer's width and is shorter, so more clips fit down the screen.
+    var drawerCard: CGSize {
+        switch self {
+        case .small: CGSize(width: drawerWidth - 32, height: 122)
+        case .medium: CGSize(width: drawerWidth - 32, height: 152)
+        case .large: CGSize(width: drawerWidth - 32, height: 196)
+        }
+    }
+}
+
+/// Where the shelf sits on the screen.
+enum ShelfPosition: String, CaseIterable {
+    case bottom, right
+
+    var label: String {
+        switch self {
+        case .bottom: "Bottom of the screen"
+        case .right: "Right side"
+        }
+    }
 }
 
 /// Where Return sends the selected clip.

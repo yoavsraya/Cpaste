@@ -26,6 +26,9 @@ final class AppSettings {
     var hasSeenWelcome: Bool {
         didSet { defaults.set(hasSeenWelcome, forKey: Key.hasSeenWelcome) }
     }
+    var shelfPosition: ShelfPosition {
+        didSet { defaults.set(shelfPosition.rawValue, forKey: Key.shelfPosition) }
+    }
     var cardSize: CardSize {
         didSet { defaults.set(cardSize.rawValue, forKey: Key.cardSize) }
     }
@@ -52,6 +55,7 @@ final class AppSettings {
         quickPasteModifier = defaults.string(forKey: Key.quickPasteModifier).flatMap(QuickPasteModifier.init(rawValue:)) ?? .command
         pasteTarget = defaults.string(forKey: Key.pasteTarget).flatMap(PasteTarget.init(rawValue:)) ?? .activeApp
         hasSeenWelcome = defaults.bool(forKey: Key.hasSeenWelcome)
+        shelfPosition = defaults.string(forKey: Key.shelfPosition).flatMap(ShelfPosition.init(rawValue:)) ?? .bottom
         cardSize = defaults.string(forKey: Key.cardSize).flatMap(CardSize.init(rawValue:)) ?? .medium
         showsDuringScreenSharing = defaults.object(forKey: Key.showsDuringScreenSharing) as? Bool ?? true
         retention = defaults.string(forKey: Key.retention).flatMap(Retention.init(rawValue:)) ?? .month
@@ -76,6 +80,7 @@ final class AppSettings {
         static let quickPasteModifier = "quickPasteModifier"
         static let pasteTarget = "pasteTarget"
         static let cardSize = "cardSize"
+        static let shelfPosition = "shelfPosition"
         static let hasSeenWelcome = "hasSeenWelcome"
         static let showsDuringScreenSharing = "showsDuringScreenSharing"
         static let retention = "retention"

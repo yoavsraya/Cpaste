@@ -28,6 +28,12 @@ UI options for the panel are in `ui-options.html` next to this file, published a
 - A welcome window explains the shortcut and the Accessibility permission on the first launch only.
 - Settings shows the number of clips and the size of the history on disk.
 - Cards show each clip in its own way. A link shows its site name, a colour code shows a swatch, commands and code use a monospace font, an image fills the card with a few words read from it, and a file shows its Finder icon and size. Options considered are in `clip-design-options.html`.
+- Cmd+Z undoes the last delete while the shelf is open. Image files of deleted clips are removed when the shelf closes, and files no clip uses are cleared at launch.
+- Cmd+J merges the selected text clips into one. Shift+Cmd+C copies the text read from an image as a new clip.
+- Long text fades out on its card with a count of the hidden lines.
+- The menu-bar menu pauses recording for five minutes, an hour, or until resumed. Copies made during a pause are never recorded.
+- Settings exports every category with its clips to one `.cpaste` file, which is JSON, and imports it back without making duplicates.
+- The shelf slides in and out, unless Reduce Motion is on. It sits along the bottom of the screen or as a drawer on the right side.
 - Lives in the menu bar with no Dock icon. Starts at login when the setting is on.
 
 ## What it leaves out

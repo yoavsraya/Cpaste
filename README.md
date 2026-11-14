@@ -78,6 +78,7 @@ Click the Cpaste icon in the menu bar and choose **Settings…**.
 **General**
 - **Open at login** starts Cpaste whenever you turn on your Mac.
 - **Paste items** chooses what Return does. *To active app* pastes for you. *To clipboard* only copies the clip, and you press Cmd+V yourself.
+- **Position** puts the shelf along the bottom of the screen, or as a drawer on the right side with the clips in a column.
 - **Card size** makes the cards small, medium or large.
 - **Keep history** sets how long clips outside a category are kept, from one day to forever.
 - **History size** shows how many clips you have and how much disk they use.

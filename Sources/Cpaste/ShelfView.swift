@@ -28,6 +28,11 @@ final class ShelfModel {
     var query = ""
     var filter: ClipFilter = .all
     var cardSize: CardSize = .medium
+    var position: ShelfPosition = .bottom
+
+    var cardDimensions: CGSize {
+        position == .bottom ? cardSize.card : cardSize.drawerCard
+    }
     var kindFilter: ClipKind?
     var appFilter: String?
     /// The apps offered in the filter menu.
@@ -142,7 +147,7 @@ struct ShelfView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            header
+            if model.position == .bottom { header } else { drawerHeader }
             if model.editing != nil {
                 editor
             } else if let message = model.errorMessage {
@@ -173,16 +178,39 @@ struct ShelfView: View {
         return "Nothing copied yet. Copy something and it shows up here."
     }
 
+    private var searchField: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
+            TextField("Search", text: $model.query)
+                .textFieldStyle(.plain).focused($focus, equals: .search)
+        }
+        .font(.system(size: 13))
+        .padding(.horizontal, 10).frame(height: 30)
+        .background(.primary.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
+    }
+
+    /// The header of the side drawer, stacked because the drawer is too narrow for one row.
+    private var drawerHeader: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 6) {
+                searchField
+                filterMenu
+            }
+            if model.naming != nil {
+                namingField
+            } else {
+                chips
+            }
+            if let hint = model.undoHint {
+                Text(hint).font(.system(size: 11)).foregroundStyle(.secondary)
+            }
+        }
+        .padding(.horizontal, 16).padding(.top, 14).padding(.bottom, 8)
+    }
+
     private var header: some View {
         HStack(spacing: 10) {
-            HStack(spacing: 6) {
-                Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
-                TextField("Search", text: $model.query)
-                    .textFieldStyle(.plain).focused($focus, equals: .search)
-            }
-            .font(.system(size: 13))
-            .padding(.horizontal, 10).frame(width: 220, height: 30)
-            .background(.primary.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
+            searchField.frame(width: 220)
 
             filterMenu
 
@@ -313,7 +341,9 @@ struct ShelfView: View {
                 .padding(.horizontal, 10).frame(width: 220, height: 30)
                 .background(.primary.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
                 .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Color.accentColor))
-            Text("↩ save    esc cancel").font(.system(size: 11)).foregroundStyle(.secondary)
+            if model.position == .bottom {
+                Text("↩ save    esc cancel").font(.system(size: 11)).foregroundStyle(.secondary)
+            }
         }
     }
 
@@ -340,11 +370,27 @@ struct ShelfView: View {
 
     private var cards: some View {
         ScrollViewReader { proxy in
-            ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(spacing: 12) {
+            ScrollView(model.position == .bottom ? .horizontal : .vertical, showsIndicators: false) {
+                Group {
+                    if model.position == .bottom {
+                        LazyHStack(spacing: 12) { cardList }
+                    } else {
+                        LazyVStack(spacing: 10) { cardList }
+                    }
+                }
+                .padding(.horizontal, 16).padding(.bottom, 14).padding(.top, 4)
+            }
+            .onChange(of: model.selection) { _, selection in
+                guard model.clips.indices.contains(selection) else { return }
+                withAnimation(.easeOut(duration: 0.12)) { proxy.scrollTo(model.clips[selection].id, anchor: nil) }
+            }
+        }
+    }
+
+    @ViewBuilder private var cardList: some View {
                     ForEach(Array(model.clips.enumerated()), id: \.element.id) { index, clip in
                         let category = model.categories.first { $0.id == clip.categoryID }
-                        ClipCard(clip: clip, category: category, imageFiles: imageFiles, size: model.cardSize.card,
+                        ClipCard(clip: clip, category: category, imageFiles: imageFiles, size: model.cardDimensions,
                                  isSelected: model.isSelected(at: index))
                             .id(clip.id)
                             .onTapGesture {
@@ -373,14 +419,6 @@ struct ShelfView: View {
                                 return true
                             }
                     }
-                }
-                .padding(.horizontal, 16).padding(.bottom, 14).padding(.top, 4)
-            }
-            .onChange(of: model.selection) { _, selection in
-                guard model.clips.indices.contains(selection) else { return }
-                withAnimation(.easeOut(duration: 0.12)) { proxy.scrollTo(model.clips[selection].id, anchor: nil) }
-            }
-        }
     }
 
     /// The dragged item itself travels in `model.dragged`, and the provider only marks the drag as one of ours.

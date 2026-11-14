@@ -153,11 +153,14 @@ private struct GeneralPane: View {
                     Text(loginError).font(.callout).foregroundStyle(.red)
                 }
             }
-            Section("Card size") {
+            Section("Shelf") {
+                Picker("Position", selection: $settings.shelfPosition) {
+                    ForEach(ShelfPosition.allCases, id: \.self) { Text($0.label).tag($0) }
+                }
                 Picker("Card size", selection: $settings.cardSize) {
                     ForEach(CardSize.allCases, id: \.self) { Text($0.label).tag($0) }
                 }
-                .pickerStyle(.segmented).labelsHidden()
+                .pickerStyle(.segmented)
             }
             Section("Paste items") {
                 target(.activeApp, title: "To active app",

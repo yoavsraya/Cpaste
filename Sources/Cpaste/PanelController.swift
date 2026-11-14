@@ -1,4 +1,5 @@
 import AppKit
+import QuartzCore
 import Carbon.HIToolbox
 import CpasteCore
 import SwiftUI
@@ -20,6 +21,8 @@ final class PanelController: NSObject, NSWindowDelegate {
     private var keyMonitor: Any?
     /// The last delete, kept until the shelf closes or another delete replaces it, so Command-Z can undo it.
     private var lastDeleted: DeletedClips?
+    /// True while the shelf slides away, when it is still on screen but already closed to the user.
+    private var isClosing = false
 
     /// `onPasted` runs after a clip was written to the clipboard and before Command-V is sent.
     init(store: ClipStore, settings: AppSettings, onPasted: @escaping (Clip) -> Void) {
@@ -71,7 +74,7 @@ final class PanelController: NSObject, NSWindowDelegate {
     }
 
     func toggle() {
-        panel.isVisible ? close() : show()
+        panel.isVisible && !isClosing ? close(animated: true) : show()
     }
 
     private func show() {
@@ -82,17 +85,40 @@ final class PanelController: NSObject, NSWindowDelegate {
         model.naming = nil
         model.editing = nil
         model.cardSize = settings.cardSize
+        model.position = settings.shelfPosition
         model.canPasteDirectly = !pastesIntoActiveApp || Paster.canPasteDirectly
         panel.sharingType = settings.showsDuringScreenSharing ? .readOnly : .none
         reload()
 
         let mouse = NSEvent.mouseLocation
         let screen = NSScreen.screens.first { $0.frame.contains(mouse) } ?? NSScreen.main
-        if let visible = screen?.visibleFrame {
-            panel.setFrame(NSRect(x: visible.minX + Self.margin, y: visible.minY + Self.margin,
-                                  width: visible.width - 2 * Self.margin, height: settings.cardSize.shelfHeight), display: true)
+        let visible = screen?.visibleFrame ?? .zero
+        let frame: NSRect
+        switch settings.shelfPosition {
+        case .bottom:
+            frame = NSRect(x: visible.minX + Self.margin, y: visible.minY + Self.margin,
+                           width: visible.width - 2 * Self.margin, height: settings.cardSize.shelfHeight)
+        case .right:
+            let width = settings.cardSize.drawerWidth
+            frame = NSRect(x: visible.maxX - width - Self.margin, y: visible.minY + Self.margin,
+                           width: width, height: visible.height - 2 * Self.margin)
         }
-        panel.makeKeyAndOrderFront(nil)
+        isClosing = false
+        if NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
+            panel.alphaValue = 1
+            panel.setFrame(frame, display: true)
+            panel.makeKeyAndOrderFront(nil)
+        } else {
+            panel.alphaValue = 0
+            panel.setFrame(frame.offsetBy(dx: offscreen.dx, dy: offscreen.dy), display: true)
+            panel.makeKeyAndOrderFront(nil)
+            NSAnimationContext.runAnimationGroup { context in
+                context.duration = 0.18
+                context.timingFunction = CAMediaTimingFunction(name: .easeOut)
+                panel.animator().setFrame(frame, display: true)
+                panel.animator().alphaValue = 1
+            }
+        }
         model.focusToken += 1
         keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
             let handled = MainActor.assumeIsolated { self?.handle(event) ?? false }
@@ -100,11 +126,36 @@ final class PanelController: NSObject, NSWindowDelegate {
         }
     }
 
-    private func close() {
+    /// How far the shelf travels when it slides in from its screen edge.
+    private var offscreen: (dx: CGFloat, dy: CGFloat) {
+        settings.shelfPosition == .bottom ? (0, -60) : (60, 0)
+    }
+
+    /// `animated` slides the shelf away. A paste closes without it, because the app behind needs the keyboard back at once.
+    private func close(animated: Bool = false) {
         if let keyMonitor { NSEvent.removeMonitor(keyMonitor) }
         keyMonitor = nil
-        panel.orderOut(nil)
         forgetLastDelete()
+        guard animated, !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion else {
+            isClosing = false
+            panel.orderOut(nil)
+            return
+        }
+        isClosing = true
+        let target = panel.frame.offsetBy(dx: offscreen.dx, dy: offscreen.dy)
+        NSAnimationContext.runAnimationGroup({ context in
+            context.duration = 0.13
+            context.timingFunction = CAMediaTimingFunction(name: .easeIn)
+            panel.animator().setFrame(target, display: true)
+            panel.animator().alphaValue = 0
+        }, completionHandler: { [weak self] in
+            MainActor.assumeIsolated {
+                // Reopened during the slide, so the shelf must stay.
+                guard let self, self.isClosing else { return }
+                self.isClosing = false
+                self.panel.orderOut(nil)
+            }
+        })
     }
 
     func windowDidResignKey(_ notification: Notification) {
@@ -172,10 +223,12 @@ final class PanelController: NSObject, NSWindowDelegate {
         switch key {
         case kVK_LeftArrow: move(by: -1)
         case kVK_RightArrow: move(by: 1)
+        case kVK_UpArrow where settings.shelfPosition == .right: move(by: -1)
+        case kVK_DownArrow where settings.shelfPosition == .right: move(by: 1)
         case kVK_Return, kVK_ANSI_KeypadEnter: selectedClip.map { paste($0) }
         case kVK_Tab: cycleFilter(by: event.modifierFlags.contains(.shift) ? -1 : 1)
         case kVK_Escape:
-            if model.query.isEmpty { close() } else { model.query = "" }
+            if model.query.isEmpty { close(animated: true) } else { model.query = "" }
         case kVK_ANSI_S where command: showSaveMenu(for: model.selectedClips)
         case kVK_Delete where command: delete(model.selectedClips)
         case kVK_ANSI_Z where command && lastDeleted != nil: undoDelete()
