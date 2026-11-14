@@ -1,0 +1,303 @@
+<title>Cpaste panel options</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one mock Mac screen up top with a four-way switcher, then the comparison and the pick, in a single reading column. */
+:root {
+  --bg: #EDF1F1; --surface: #FFFFFF; --ink: #131A1B; --muted: #566466; --line: #D3DCDC;
+  --accent: #0B6E66; --accent-ink: #FFFFFF; --accent-soft: #D9ECEA;
+  --display: "Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
+  --body: "Figtree", -apple-system, "Helvetica Neue", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  /* The mock screen is one fixed dark look in both themes, like the real panel. */
+  --wall-a: #1F3B43; --wall-b: #0E1C24; --wall-c: #3B5A4A;
+  --pane: rgba(20, 25, 28, .88); --pane-line: rgba(255, 255, 255, .13); --pane-ink: #EEF3F3; --pane-muted: #93A2A4;
+  --card: #1B2225; --card-line: rgba(255, 255, 255, .08); --sel: #5FE0CF;
+  --k-text: #4E79D8; --k-link: #8A63D2; --k-image: #C9577C; --k-code: #B9812A;
+  --doc: #F6F7F5; --doc-ink: #22292A;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0F1516; --surface: #171F21; --ink: #E8EEEE; --muted: #98A7A9; --line: #2A3538;
+  --accent: #5FE0CF; --accent-ink: #06211E; --accent-soft: #17332F; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0F1516; --surface: #171F21; --ink: #E8EEEE; --muted: #98A7A9; --line: #2A3538;
+  --accent: #5FE0CF; --accent-ink: #06211E; --accent-soft: #17332F; color-scheme: dark }
+
+body { background: var(--bg); color: var(--ink); font: 16px/1.55 var(--body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 56px; }
+.wrap { max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px; }
+h1 { font: 700 clamp(28px, 5vw, 40px)/1.1 var(--display); margin: 0; text-wrap: balance; letter-spacing: -.01em; }
+h2 { font: 700 22px/1.2 var(--display); margin: 0 0 10px; text-wrap: balance; }
+p { margin: 0; max-width: 65ch; }
+.lede { color: var(--muted); margin-top: 10px; }
+kbd { font: 500 12px/1 var(--mono); padding: 3px 6px; border-radius: 5px; border: 1px solid var(--line); background: var(--surface); white-space: nowrap; }
+
+.tabs { display: flex; flex-wrap: wrap; gap: 8px; }
+.tab { font: 600 15px/1 var(--body); color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 10px 16px; cursor: pointer; }
+.tab small { font: 500 12px var(--mono); color: var(--muted); margin-right: 6px; }
+.tab[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.tab[aria-selected="true"] small { color: inherit; opacity: .75; }
+.tab:focus-visible, .clip:focus-visible, .chip:focus-visible, .q:focus-visible { outline: 2px solid var(--sel); outline-offset: 2px; }
+.tab:focus-visible { outline-color: var(--accent); }
+
+/* ---------- mock screen ---------- */
+.stage { position: relative; height: clamp(440px, 58vw, 580px); border-radius: 14px; overflow: hidden; max-width: 100%;
+  background: radial-gradient(120% 90% at 85% 10%, var(--wall-c), transparent 60%), linear-gradient(160deg, var(--wall-a), var(--wall-b));
+  color: var(--pane-ink); font-family: -apple-system, "Helvetica Neue", var(--body); }
+.menubar { height: 26px; display: flex; gap: 16px; align-items: center; padding: 0 12px; font-size: 12px; background: rgba(0, 0, 0, .28); color: var(--pane-ink); }
+.menubar b { font-weight: 600; } .menubar span:last-child { margin-left: auto; }
+.doc { position: absolute; left: 6%; top: 52px; width: min(430px, 80%); height: 250px; background: var(--doc); color: var(--doc-ink); border-radius: 10px; box-shadow: 0 18px 40px rgba(0, 0, 0, .35); overflow: hidden; font-size: 13px; }
+.doc header { display: flex; gap: 6px; align-items: center; padding: 9px 10px; border-bottom: 1px solid rgba(0, 0, 0, .08); font-weight: 600; }
+.doc header i { width: 10px; height: 10px; border-radius: 50%; background: #C9CFCF; }
+.doc .page { padding: 12px 14px; line-height: 1.6; }
+.doc .caret { display: inline-block; width: 2px; height: 15px; background: var(--k-text); vertical-align: -2px; animation: blink 1.1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0 } }
+#typed { background: rgba(95, 224, 207, .35); border-radius: 3px; word-break: break-word; }
+
+.panel { position: absolute; display: flex; flex-direction: column; min-width: 0; background: var(--pane); border: 1px solid var(--pane-line); -webkit-backdrop-filter: blur(22px); backdrop-filter: blur(22px); box-shadow: 0 20px 50px rgba(0, 0, 0, .45); }
+.bar { display: flex; gap: 10px; align-items: center; padding: 10px 12px; min-width: 0; }
+.q { flex: 1 1 130px; min-width: 0; font: 14px -apple-system, var(--body); color: var(--pane-ink); background: rgba(255, 255, 255, .07); border: 1px solid transparent; border-radius: 8px; padding: 7px 10px; }
+.q::placeholder { color: var(--pane-muted); }
+.chips { display: flex; gap: 4px; overflow-x: auto; min-width: 0; scrollbar-width: none; }
+.chip { flex: none; display: flex; align-items: center; gap: 6px; font: 500 13px -apple-system, var(--body); color: var(--pane-ink); background: transparent; border: 0; border-radius: 999px; padding: 6px 10px; cursor: pointer; }
+.chip i { width: 9px; height: 9px; border-radius: 50%; }
+.chip[aria-pressed="true"] { background: rgba(255, 255, 255, .13); }
+.main { flex: 1; display: flex; min-height: 0; min-width: 0; }
+.clips { display: flex; gap: 8px; padding: 2px 12px 12px; min-width: 0; flex: 1; }
+.empty { color: var(--pane-muted); font-size: 13px; padding: 18px 4px; }
+.clip { all: unset; box-sizing: border-box; cursor: pointer; background: var(--card); border: 1px solid var(--card-line); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; min-width: 0; font-size: 13px; color: var(--pane-ink); position: relative; }
+.clip[aria-selected="true"] { border-color: var(--sel); box-shadow: 0 0 0 2px var(--sel); }
+.head { display: flex; align-items: center; gap: 8px; padding: 7px 10px; background: var(--k); color: #fff; }
+.kind { font-weight: 600; } .ago { font-size: 11px; opacity: .85; }
+.app { margin-left: auto; width: 20px; height: 20px; border-radius: 5px; background: rgba(0, 0, 0, .28); display: grid; place-items: center; font: 600 11px var(--mono); }
+.body { padding: 9px 10px; flex: 1; min-height: 0; overflow: hidden; line-height: 1.35; word-break: break-word; }
+.body.code { font: 12px/1.45 var(--mono); }
+.thumb { display: block; width: 100%; height: 100%; min-height: 54px; border-radius: 6px;
+  background: linear-gradient(#2a3a44 0 18%, transparent 18%), repeating-linear-gradient(90deg, #E9EEF0 0 22%, #CBD6DA 22% 24%), #E9EEF0; }
+.foot { padding: 0 10px 8px; font-size: 11px; color: var(--pane-muted); text-align: center; }
+.num { display: none; font: 500 11px var(--mono); color: var(--pane-muted); }
+.preview { display: none; }
+.hints { display: flex; flex-wrap: wrap; gap: 4px 14px; padding: 8px 12px; border-top: 1px solid var(--pane-line); font-size: 11px; color: var(--pane-muted); }
+.hints b { font: 500 11px var(--mono); color: var(--pane-ink); }
+.toast { position: absolute; top: 36px; left: 50%; transform: translateX(-50%); background: var(--sel); color: #06211E; font: 600 12px var(--body); padding: 6px 12px; border-radius: 999px; max-width: 90%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* A — shelf */
+[data-layout="shelf"] .panel { left: 8px; right: 8px; bottom: 8px; border-radius: 18px; }
+[data-layout="shelf"] .bar { justify-content: center; } [data-layout="shelf"] .q { flex: 0 1 180px; }
+[data-layout="shelf"] .clips { overflow-x: auto; } [data-layout="shelf"] .clip { flex: 0 0 158px; height: 168px; }
+[data-layout="shelf"] .hints { display: none; }
+
+/* shared row look for B and D */
+[data-layout="bar"] .clips, [data-layout="popup"] .clips, [data-layout="drawer"] .clips { flex-direction: column; overflow-y: auto; gap: 4px; }
+[data-layout="bar"] .clip, [data-layout="popup"] .clip { flex: none; flex-direction: row; align-items: center; gap: 10px; padding: 7px 8px; border-radius: 8px; background: transparent; border-color: transparent; }
+[data-layout="bar"] .clip[aria-selected="true"], [data-layout="popup"] .clip[aria-selected="true"] { background: rgba(95, 224, 207, .16); box-shadow: none; border-color: transparent; }
+[data-layout="bar"] .head, [data-layout="popup"] .head { padding: 0; width: 22px; height: 22px; border-radius: 6px; flex: none; justify-content: center; }
+[data-layout="bar"] .head > *, [data-layout="popup"] .head > * { display: none; }
+[data-layout="bar"] .head::after, [data-layout="popup"] .head::after { content: attr(data-glyph); font: 600 11px var(--mono); }
+[data-layout="bar"] .body, [data-layout="popup"] .body { padding: 0; white-space: nowrap; text-overflow: ellipsis; }
+[data-layout="bar"] .thumb, [data-layout="popup"] .thumb { display: none; }
+[data-layout="bar"] .foot, [data-layout="popup"] .foot { display: none; }
+[data-layout="bar"] .num, [data-layout="popup"] .num { display: block; flex: none; }
+
+/* B — command bar */
+[data-layout="bar"] .panel { left: 50%; top: 54%; transform: translate(-50%, -50%); width: min(700px, calc(100% - 20px)); height: min(400px, calc(100% - 60px)); border-radius: 14px; }
+[data-layout="bar"] .bar { flex-wrap: wrap; } [data-layout="bar"] .q { flex-basis: 100%; font-size: 16px; padding: 9px 12px; }
+[data-layout="bar"] .clips { flex: 1 1 50%; padding-right: 6px; }
+[data-layout="bar"] .preview { display: flex; flex-direction: column; gap: 10px; flex: 1 1 50%; min-width: 0; margin: 2px 12px 12px 6px; padding: 12px; border-radius: 10px; background: var(--card); border: 1px solid var(--card-line); font-size: 13px; overflow: auto; }
+.preview .pv { flex: 1; min-height: 60px; word-break: break-word; line-height: 1.45; } .preview .pv.code { font: 12px/1.5 var(--mono); }
+.preview dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; font-size: 11px; color: var(--pane-muted); }
+.preview dd { margin: 0; color: var(--pane-ink); }
+
+/* C — side drawer */
+[data-layout="drawer"] .panel { top: 34px; right: 8px; bottom: 8px; width: min(288px, calc(100% - 16px)); border-radius: 14px; }
+[data-layout="drawer"] .bar { flex-wrap: wrap; } [data-layout="drawer"] .q { flex-basis: 100%; }
+[data-layout="drawer"] .clips { gap: 8px; } [data-layout="drawer"] .clip { flex: none; }
+[data-layout="drawer"] .head { padding: 4px 10px; font-size: 12px; } [data-layout="drawer"] .body { max-height: 54px; }
+[data-layout="drawer"] .thumb { height: 46px; min-height: 0; } [data-layout="drawer"] .foot { display: none; }
+
+/* D — popup at the caret */
+[data-layout="popup"] .panel { left: min(calc(6% + 150px), calc(100% - 316px)); top: 132px; width: min(308px, calc(100% - 16px)); max-height: calc(100% - 144px); border-radius: 12px; }
+[data-layout="popup"] .chips { display: none; } [data-layout="popup"] .clips { padding: 2px 8px 8px; }
+[data-layout="popup"] .clip:nth-child(n+7) { display: none; }
+
+@media (max-width: 560px) {
+  [data-layout="bar"] .preview { display: none; }
+  [data-layout="shelf"] .bar { flex-wrap: wrap; } [data-layout="shelf"] .q { flex-basis: 100%; }
+  [data-layout="popup"] .panel { left: 8px; }
+}
+@media (prefers-reduced-motion: reduce) { .doc .caret { animation: none; } }
+
+/* ---------- write-up ---------- */
+.note { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px 32px; }
+.note h3 { font: 600 13px/1 var(--body); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 0 0 8px; }
+.note ul, .fixed ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; }
+.note > div { min-width: 0; }
+.scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; min-width: 640px; font-size: 14px; }
+th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+thead th { font: 600 13px var(--body); color: var(--muted); } tbody tr:last-child > * { border-bottom: 0; }
+tbody th { font-weight: 600; white-space: nowrap; } td { font-variant-numeric: tabular-nums; }
+.pick { background: var(--accent-soft); border-radius: 12px; padding: 20px 22px; display: flex; flex-direction: column; gap: 10px; }
+.fixed li { max-width: 65ch; }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Four ways the Cpaste panel can open on Cmd+1</h1>
+    <p class="lede">Each option below is a working mock with the same ten clips. Type in the search field, click a category, move with the arrow keys, and press Return to paste into the note behind the panel. The clips are examples built from your screenshot, with one image and one terminal command added.</p>
+  </header>
+
+  <div class="tabs" role="tablist" aria-label="Panel layout">
+    <button class="tab" role="tab" id="tab-shelf" data-l="shelf"><small>A</small>Bottom shelf</button>
+    <button class="tab" role="tab" id="tab-bar" data-l="bar"><small>B</small>Command bar</button>
+    <button class="tab" role="tab" id="tab-drawer" data-l="drawer"><small>C</small>Side drawer</button>
+    <button class="tab" role="tab" id="tab-popup" data-l="popup"><small>D</small>Popup at the caret</button>
+  </div>
+
+  <div class="stage" id="stage" data-layout="bar">
+    <div class="menubar"><b>Notes</b><span>File</span><span>Edit</span><span>View</span><span>Sat 14 Nov 12:40</span></div>
+    <div class="doc">
+      <header><i></i><i></i><i></i>&nbsp;Phuket shortlist</header>
+      <div class="page">Hotels to compare for the trip:<br><span id="typed"></span><span class="caret"></span></div>
+    </div>
+    <div class="panel">
+      <div class="bar">
+        <input class="q" id="q" type="search" placeholder="Search clips" autocomplete="off" aria-label="Search clips">
+        <div class="chips" id="chips"></div>
+      </div>
+      <div class="main"><div class="clips" id="clips" role="listbox" aria-label="Clips"></div><div class="preview" id="preview"></div></div>
+      <div class="hints"><span><b>↑↓</b> move</span><span><b>↵</b> paste</span><span><b>⌘1–9</b> paste by number</span><span><b>⌘S</b> save to category</span><span><b>esc</b> close</span></div>
+    </div>
+    <div class="toast" id="toast" hidden></div>
+  </div>
+
+  <section class="note" id="note" aria-live="polite"></section>
+
+  <section>
+    <h2>How the four compare</h2>
+    <div class="scroll"><table>
+      <thead><tr><th></th><th>A. Bottom shelf</th><th>B. Command bar</th><th>C. Side drawer</th><th>D. Popup at the caret</th></tr></thead>
+      <tbody>
+        <tr><th>Clips in view</th><td>About 6 large cards</td><td>9 rows plus a full preview</td><td>About 6 compact cards</td><td>6 rows</td></tr>
+        <tr><th>Reading long text</th><td>First lines of each card</td><td>Whole clip in the preview</td><td>Two lines</td><td>One line</td></tr>
+        <tr><th>Finding an image</th><td>Strongest. Every image is a big thumbnail.</td><td>One image at a time, large</td><td>Small thumbnails</td><td>Weakest. Images show as a label.</td></tr>
+        <tr><th>Search</th><td>Field sits beside the categories</td><td>The field is the panel. Typing filters at once.</td><td>Field on top</td><td>Type to filter, no categories</td></tr>
+        <tr><th>Screen covered</th><td>Bottom third, full width</td><td>Centre, about a third</td><td>Right edge only</td><td>Smallest</td></tr>
+        <tr><th>Muscle memory</th><td>Same as what you use today</td><td>Same as Spotlight</td><td>New</td><td>New</td></tr>
+        <tr><th>Build risk</th><td>Low</td><td>Low</td><td>Low</td><td>Higher. Finding the caret needs the Accessibility API and some apps do not report it, so the popup falls back to the mouse position.</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section class="pick">
+    <h2>My pick is B, with A one setting away</h2>
+    <p>Most of what you copy is short text, like the hotel names in your screenshot. Rows show more of those per screen than cards do, and the preview shows the whole clip before you paste it. Search is the first thing under your fingers.</p>
+    <p>The shelf is the better view when you are hunting for a screenshot. All four options draw the same list of clips, so the app can ship B as the default and A as a second view behind a setting for little extra work. C and D do not earn a place in the first version.</p>
+  </section>
+
+  <section class="fixed">
+    <h2>What stays the same in every option</h2>
+    <ul>
+      <li><kbd>⌘1</kbd> opens the panel over whatever app you are in, and the shortcut can be changed in settings.</li>
+      <li>Return pastes the selected clip into the app you came from. <kbd>⌘1</kbd> to <kbd>⌘9</kbd> paste by position while the panel is open.</li>
+      <li>Typing filters the clips straight away. Categories narrow the list further.</li>
+      <li><kbd>⌘S</kbd> saves the selected clip to a category. Saved clips never expire. Unsaved history is trimmed by age.</li>
+      <li>Images are stored at full size and shown as thumbnails.</li>
+      <li>Copies from password managers are skipped.</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+const CATS = [
+  { id: 'all', name: 'Clipboard' },
+  { id: 'links', name: 'Useful Links', c: '#F0605D' },
+  { id: 'nums', name: 'מספרים חשובים', c: '#4C8DF6' },
+  { id: 'work', name: 'Work', c: '#4CC764' },
+];
+const CLIPS = [
+  { t: 'text', v: 'kamala beach estate', app: 'Chrome', ago: '5 min' },
+  { t: 'text', v: 'Thavorn Beach Village Resort & Spa Phuket', app: 'Chrome', ago: '16 min' },
+  { t: 'image', v: 'Screenshot', dims: '1284 × 742', app: 'Screenshot', ago: '19 min' },
+  { t: 'text', v: 'lalynn resort & villas, phuket', app: 'Chrome', ago: '21 min' },
+  { t: 'text', v: 'amora beach resort phuket', app: 'Chrome', ago: '22 min' },
+  { t: 'text', v: 'Cape Panwa Hotel', app: 'Chrome', ago: '22 min' },
+  { t: 'text', v: 'Nai Harn', app: 'Notes', ago: '25 min' },
+  { t: 'link', v: 'https://www.booking.com/city/th/phuket.html', app: 'Chrome', ago: '2 days', cat: 'links' },
+  { t: 'code', v: 'git log --oneline -5', app: 'Terminal', ago: '3 days', cat: 'work' },
+  { t: 'text', v: 'מספר הזמנה 48213907', app: 'Mail', ago: '1 week', cat: 'nums' },
+];
+const KIND = { text: ['Text', 'T'], link: ['Link', '↗'], image: ['Image', '▣'], code: ['Code', '$'] };
+const NOTES = {
+  shelf: { good: ['Each image is a large thumbnail, so screenshots are easy to spot.', 'It is the layout your hands already know.'],
+           cost: ['About six clips fit before you scroll sideways.', 'Long text is cut after a few lines and there is no preview.'] },
+  bar: { good: ['Nine clips in view, and the preview shows the whole selected clip.', 'The search field has focus the moment the panel opens.', 'Number keys reach any visible row in one press.'],
+         cost: ['Only one image is visible at a time.', 'It covers the middle of the screen while open.'] },
+  drawer: { good: ['The app you are working in stays visible beside it.', 'It could stay pinned open while you paste several clips in a row.'],
+            cost: ['Narrow cards cut text after two lines.', 'On a small laptop screen it takes a fifth of the width.'] },
+  popup: { good: ['It opens where you are typing, so your eyes do not move.', 'It covers the least of the screen.'],
+           cost: ['No categories and no image thumbnails, so it suits recent text only.', 'It depends on apps reporting the caret position, and not all do.'] },
+};
+const $ = id => document.getElementById(id);
+const esc = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+let layout = 'bar', cat = 'all', sel = 0, shown = [];
+try { layout = localStorage.getItem('cpaste-layout') || layout; } catch (e) {}
+if (!NOTES[layout]) layout = 'bar';
+
+const foot = c => c.t === 'image' ? c.dims : c.t === 'link' ? new URL(c.v).host : c.t === 'code' ? '1 line' : c.v.length + ' characters';
+const bodyHtml = c => c.t === 'image' ? `<span class="thumb"></span>` : esc(c.v);
+
+function render() {
+  const q = $('q').value.trim().toLowerCase();
+  shown = CLIPS.filter(c => (cat === 'all' || c.cat === cat) && (!q || c.v.toLowerCase().includes(q) || KIND[c.t][0].toLowerCase().includes(q)));
+  sel = Math.max(0, Math.min(sel, shown.length - 1));
+  $('stage').dataset.layout = layout;
+  document.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-selected', t.dataset.l === layout));
+  $('chips').innerHTML = CATS.map(c => `<button class="chip" data-c="${c.id}" aria-pressed="${c.id === cat}">${c.c ? `<i style="background:${c.c}"></i>` : ''}<span dir="auto">${esc(c.name)}</span></button>`).join('');
+  const rowish = layout === 'bar' || layout === 'popup';
+  $('clips').innerHTML = shown.length ? shown.map((c, i) => `
+    <button class="clip" role="option" data-i="${i}" aria-selected="${i === sel}" style="--k:var(--k-${c.t})">
+      <span class="head" data-glyph="${KIND[c.t][1]}"><span><span class="kind">${KIND[c.t][0]}</span><br><span class="ago">${c.ago} ago</span></span><span class="app" title="${c.app}">${c.app[0]}</span></span>
+      <span class="body ${c.t === 'code' ? 'code' : ''}" dir="auto">${rowish && c.t === 'image' ? `Screenshot · ${c.dims}` : bodyHtml(c)}</span>
+      <span class="foot">${foot(c)}</span><span class="num">${i < 9 ? '⌘' + (i + 1) : ''}</span>
+    </button>`).join('') : `<div class="empty">No clips match. Clear the search or pick Clipboard.</div>`;
+  const c = shown[sel];
+  $('preview').innerHTML = c ? `<div class="pv ${c.t === 'code' ? 'code' : ''}" dir="auto">${bodyHtml(c)}</div>
+    <dl><dt>Type</dt><dd>${KIND[c.t][0]}</dd><dt>Copied from</dt><dd>${c.app}</dd><dt>When</dt><dd>${c.ago} ago</dd><dt>Size</dt><dd>${foot(c)}</dd></dl>` : '';
+  const n = NOTES[layout];
+  $('note').innerHTML = `<div><h3>Where it is strong</h3><ul>${n.good.map(x => `<li>${x}</li>`).join('')}</ul></div><div><h3>What it costs</h3><ul>${n.cost.map(x => `<li>${x}</li>`).join('')}</ul></div>`;
+}
+let toastTimer;
+function paste(i) {
+  const c = shown[i]; if (!c) return;
+  sel = i; render();
+  const label = c.t === 'image' ? `Screenshot (${c.dims})` : c.v;
+  $('typed').textContent = label;
+  const t = $('toast'); t.textContent = `Pasted into Notes: ${label}`; t.hidden = false;
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, 1800);
+}
+function move(d) {
+  sel = Math.max(0, Math.min(sel + d, shown.length - 1)); render();
+  const el = $('clips').querySelector('[aria-selected="true"]'), box = $('clips');
+  if (el) { box.scrollLeft = Math.max(0, el.offsetLeft - box.offsetLeft - 40); box.scrollTop = Math.max(0, el.offsetTop - box.offsetTop - 60); }
+}
+document.querySelector('.tabs').addEventListener('click', e => {
+  const t = e.target.closest('.tab'); if (!t) return;
+  layout = t.dataset.l; try { localStorage.setItem('cpaste-layout', layout); } catch (e) {}
+  render();
+});
+$('chips').addEventListener('click', e => { const c = e.target.closest('.chip'); if (c) { cat = c.dataset.c; sel = 0; render(); } });
+$('clips').addEventListener('click', e => { const c = e.target.closest('.clip'); if (c) { sel = +c.dataset.i; render(); } });
+$('clips').addEventListener('dblclick', e => { const c = e.target.closest('.clip'); if (c) paste(+c.dataset.i); });
+$('q').addEventListener('input', () => { sel = 0; render(); });
+$('stage').addEventListener('keydown', e => {
+  const horiz = layout === 'shelf', inQ = e.target === $('q');
+  const fwd = horiz ? 'ArrowRight' : 'ArrowDown', back = horiz ? 'ArrowLeft' : 'ArrowUp';
+  if (e.key === fwd || e.key === back) {
+    if (horiz && inQ && $('q').value) return;
+    e.preventDefault(); move(e.key === fwd ? 1 : -1);
+  } else if (e.key === 'Enter') { e.preventDefault(); paste(sel); }
+  else if ((e.metaKey || e.ctrlKey) && /^[1-9]$/.test(e.key)) { e.preventDefault(); paste(+e.key - 1); }
+});
+render();
+</script>
