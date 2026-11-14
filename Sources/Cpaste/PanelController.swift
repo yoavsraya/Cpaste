@@ -202,6 +202,23 @@ final class PanelController: NSObject, NSWindowDelegate {
         }
     }
 
+    /// Takes the keyboard back after the Touch ID dialog, and only then lets a lost keyboard close the shelf again.
+    /// The dialog hands the keyboard to the app behind as it goes away, sometimes after its answer has arrived,
+    /// so one attempt is not enough. The shelf counts as settled once it has held the keyboard for a moment.
+    private func reclaimKeyboard(attempts: Int) {
+        panel.makeKeyAndOrderFront(nil)
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(200))
+            if panel.isKeyWindow || attempts <= 1 {
+                log.notice("shelf has the keyboard back after Touch ID: \(self.panel.isKeyWindow)")
+                isAuthenticating = false
+                model.focusToken += 1
+            } else {
+                reclaimKeyboard(attempts: attempts - 1)
+            }
+        }
+    }
+
     /// Runs `action` at once for an open category, and after Touch ID or the login password for a locked private one.
     private func afterUnlocking(_ category: ClipCategory, reason: String, _ action: @escaping @MainActor () -> Void) {
         guard category.isPrivate, !model.unlocked.contains(category.id) else { return action() }
@@ -210,14 +227,13 @@ final class PanelController: NSObject, NSWindowDelegate {
         context.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: reason) { [weak self] success, error in
             Task { @MainActor in
                 guard let self else { return }
-                self.isAuthenticating = false
-                self.panel.makeKey()
                 if success {
                     self.model.unlocked.insert(category.id)
                     action()
                 } else {
                     log.notice("private category stays locked: \(String(describing: error), privacy: .public)")
                 }
+                self.reclaimKeyboard(attempts: 8)
             }
         }
     }
