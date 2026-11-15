@@ -597,7 +597,7 @@ struct ClipCard: View {
                     .font(.system(size: 9)).foregroundStyle(.secondary).lineLimit(1)
             }
             .padding(.horizontal, 12).padding(.top, 3).frame(height: headerHeight)
-            .background(headerColor.opacity(colorScheme == .dark ? 0.45 : 0.28))
+            .background(headerColor.opacity(colorScheme == .dark ? 0.30 : 0.28))
             .overlay(alignment: .top) { headerColor.frame(height: 3) }
             .overlay(alignment: .bottom) { headerColor.opacity(0.25).frame(height: 1) }
 
