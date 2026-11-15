@@ -246,7 +246,7 @@ struct ShelfView: View {
             }
             Spacer(minLength: 8)
             Text(model.undoHint ?? (model.marked.isEmpty
-                 ? "⌘click select    ⌘S save    ⌘E edit    ⌘P pin    ⌘⌫ delete"
+                 ? "space preview    ⌘click select    ⌘S save    ⌘E edit    ⌘P pin    ⌘⌫ delete"
                  : "\(model.marked.count) selected    ⌘S save    ⌘J merge    ⌘⌫ delete"))
                 .font(.system(size: 11)).foregroundStyle(.secondary).lineLimit(1)
         }

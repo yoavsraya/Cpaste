@@ -364,6 +364,7 @@ private struct ShortcutsPane: View {
             Section("In the shelf") {
                 LabeledContent("Move between clips", value: "←  →")
                 LabeledContent("Paste the selected clip", value: "↩")
+                LabeledContent("See a clip in full", value: "space")
                 LabeledContent("Select several clips", value: "⌘click")
                 LabeledContent("Save to a category", value: "⌘S, or drag onto it")
                 LabeledContent("Copy without pasting", value: "⌘C")

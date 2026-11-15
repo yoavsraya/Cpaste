@@ -18,6 +18,7 @@ final class PanelController: NSObject, NSWindowDelegate {
     private let settings: AppSettings
     private let model = ShelfModel()
     private let panel: NSPanel
+    private let preview: PreviewPanel
     private let onPasted: (Clip) -> Void
     private var keyMonitor: Any?
     /// The last delete, kept until the shelf closes or another delete replaces it, so Command-Z can undo it.
@@ -34,6 +35,7 @@ final class PanelController: NSObject, NSWindowDelegate {
         self.onPasted = onPasted
         // Non-activating, so the app the user came from stays frontmost and receives the paste.
         panel = ShelfPanel(contentRect: .zero, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: true)
+        preview = PreviewPanel(model: model, imageFiles: store.imageFiles)
         super.init()
         panel.level = .statusBar
         panel.isOpaque = false
@@ -120,16 +122,7 @@ final class PanelController: NSObject, NSWindowDelegate {
         let mouse = NSEvent.mouseLocation
         let screen = NSScreen.screens.first { $0.frame.contains(mouse) } ?? NSScreen.main
         let visible = screen?.visibleFrame ?? .zero
-        let frame: NSRect
-        switch settings.shelfPosition {
-        case .bottom:
-            frame = NSRect(x: visible.minX + Self.margin, y: visible.minY + Self.margin,
-                           width: visible.width - 2 * Self.margin, height: settings.cardSize.shelfHeight)
-        case .right:
-            let width = settings.cardSize.drawerWidth
-            frame = NSRect(x: visible.maxX - width - Self.margin, y: visible.minY + Self.margin,
-                           width: width, height: visible.height - 2 * Self.margin)
-        }
+        let frame = shelfFrame(in: visible)
         isClosing = false
         if NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
             panel.alphaValue = 1
@@ -153,6 +146,24 @@ final class PanelController: NSObject, NSWindowDelegate {
         }
     }
 
+    private func shelfFrame(in visible: NSRect) -> NSRect {
+        switch settings.shelfPosition {
+        case .bottom:
+            return NSRect(x: visible.minX + Self.margin, y: visible.minY + Self.margin,
+                          width: visible.width - 2 * Self.margin, height: settings.cardSize.shelfHeight)
+        case .right:
+            let width = settings.cardSize.drawerWidth
+            return NSRect(x: visible.maxX - width - Self.margin, y: visible.minY + Self.margin,
+                          width: width, height: visible.height - 2 * Self.margin)
+        }
+    }
+
+    private func togglePreview() {
+        guard !preview.isVisible, let visible = panel.screen?.visibleFrame else { return preview.hide() }
+        // The frame is worked out again, because the shelf may still be sliding in.
+        preview.show(beside: shelfFrame(in: visible), in: visible, position: settings.shelfPosition, sharingType: panel.sharingType)
+    }
+
     /// How far the shelf travels when it slides in from its screen edge.
     private var offscreen: (dx: CGFloat, dy: CGFloat) {
         settings.shelfPosition == .bottom ? (0, -60) : (60, 0)
@@ -162,6 +173,7 @@ final class PanelController: NSObject, NSWindowDelegate {
     private func close(animated: Bool = false) {
         if let keyMonitor { NSEvent.removeMonitor(keyMonitor) }
         keyMonitor = nil
+        preview.hide()
         forgetLastDelete()
         guard animated, !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion else {
             isClosing = false
@@ -306,6 +318,9 @@ final class PanelController: NSObject, NSWindowDelegate {
         case kVK_DownArrow where settings.shelfPosition == .right: move(by: 1)
         case kVK_Return, kVK_ANSI_KeypadEnter: selectedClip.map { paste($0) }
         case kVK_Tab: cycleFilter(by: event.modifierFlags.contains(.shift) ? -1 : 1)
+        // In a search, Space is a character of the query.
+        case kVK_Space where preview.isVisible || model.query.isEmpty: togglePreview()
+        case kVK_Escape where preview.isVisible: preview.hide()
         case kVK_Escape:
             if model.query.isEmpty { close(animated: true) } else { model.query = "" }
         case kVK_ANSI_S where command: showSaveMenu(for: model.selectedClips)

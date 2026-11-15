@@ -41,6 +41,7 @@ Copy things the way you always do. Cpaste records them in the background.
 | Paste the 2nd to 9th clip directly | **Cmd+2** to **Cmd+9** |
 | Find an old clip | Just start typing |
 | Find a screenshot | Type `image` |
+| See a clip in full, the whole text or the full-size image | **Space**, and **Space** again to close |
 | Copy a clip without pasting it | **Cmd+C** |
 | Open a link, show a file in Finder, or open an image | **Cmd+O** |
 | Use a clip in another app | Drag its card out of the shelf |

@@ -25,6 +25,7 @@ UI options for the panel are in `ui-options.html` next to this file, published a
 - Text inside image clips is read on the Mac with Apple's Vision framework and added to the search index. Hebrew is not supported by Vision.
 - A filter menu narrows the shelf to one clip type or one source app.
 - The shelf follows the system light or dark appearance, and cards come in three sizes.
+- Space shows the selected clip in full in a second panel next to the shelf, and follows the selection. That panel cannot take the keyboard, so the shelf keeps it. While a search is typed, Space is a character of the search.
 - Cmd+C copies a clip without pasting, Cmd+O opens a link, file or image, and a card can be dragged into another app.
 - A welcome window explains the shortcut and the Accessibility permission on the first launch only.
 - Settings shows the number of clips and the size of the history on disk.
