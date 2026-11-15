@@ -3,6 +3,27 @@
     <channel>
         <title>Cpaste</title>
         <item>
+            <title>0.1.8</title>
+            <pubDate>Sun, 15 Nov 2026 12:24:14 +0200</pubDate>
+            <link>https://github.com/yoavsraya/Cpaste/releases</link>
+            <sparkle:version>61</sparkle:version>
+            <sparkle:shortVersionString>0.1.8</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description sparkle:format="markdown"><![CDATA[## New
+
+- **Full preview.** Press Space on a clip to see the whole text or the full-size image. Press Space or Esc to close it.
+- **Private categories.** Right-click a category and make it private. Its clips stay hidden, also from search, until you unlock it with Touch ID or your Mac password. It stays unlocked for one minute.
+- **Category icons.** Right-click a category to give it an emoji.
+- **More card types.** Emails, phone numbers, dates, addresses and JSON each get their own card.
+- **Link titles.** A copied link shows the title of its page when the browser gives one. Nothing is fetched from the internet.
+- **Most used.** Each card counts how often you used it, and the filter menu can sort by it.
+- **Status in Settings.** Settings now shows whether recording, pasting, updates and history are working.
+- **Install with Homebrew.** See the README for the three commands.
+]]></description>
+            <enclosure url="https://github.com/yoavsraya/Cpaste/releases/download/v0.1.8/Cpaste.zip" length="3402632" type="application/octet-stream" sparkle:edSignature="ASkx2Q8c0X1cwrSZFSXLrC6QmZuJ477bWyLkKr5CiRtXEmdCVxNMcvzXg0Jjm0cax88Pa3IvZFFDNss6sPC+Cw=="/>
+        </item>
+        <item>
             <title>0.1.7</title>
             <pubDate>Sun, 15 Nov 2026 00:17:50 +0200</pubDate>
             <link>https://github.com/yoavsraya/Cpaste/releases</link>
