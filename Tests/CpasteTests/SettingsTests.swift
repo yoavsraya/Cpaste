@@ -5,12 +5,18 @@ import SwiftUI
 import Testing
 @testable import Cpaste
 
+/// Keeps its values in memory, because a real suite leaves a plist in ~/Library/Preferences after every test run.
+private final class MemoryDefaults: UserDefaults {
+    private var values: [String: Any] = [:]
+
+    override func object(forKey defaultName: String) -> Any? { values[defaultName] }
+    override func set(_ value: Any?, forKey defaultName: String) { values[defaultName] = value }
+    override func removeObject(forKey defaultName: String) { values[defaultName] = nil }
+}
+
 @MainActor
 private func freshDefaults() -> UserDefaults {
-    let name = "cpaste-tests-\(UUID().uuidString)"
-    let defaults = UserDefaults(suiteName: name)!
-    defaults.removePersistentDomain(forName: name)
-    return defaults
+    MemoryDefaults(suiteName: "cpaste-tests")!
 }
 
 private func keyDown(_ keyCode: Int, _ flags: NSEvent.ModifierFlags) -> NSEvent {
