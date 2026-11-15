@@ -590,14 +590,15 @@ struct ClipCard: View {
                         }
                     }
                     Text(clip.lastUsedAt, format: .relative(presentation: .named))
-                        .font(.system(size: 11)).opacity(0.85)
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color(nsColor: IconColor.textColor(on: NSColor(headerColor), secondary: true)))
                 }
                 Spacer()
                 if let icon = SourceApp.icon(bundleID: clip.sourceBundleID) {
                     Image(nsImage: icon).resizable().frame(width: 30, height: 30)
                 }
             }
-            .foregroundStyle(.white)
+            .foregroundStyle(headerTextColor)
             .padding(.horizontal, 12).frame(height: 46)
             .background(headerColor)
 
@@ -679,7 +680,7 @@ struct ClipCard: View {
         case .link(let url):
             let host = url.host.map { $0.hasPrefix("www.") ? String($0.dropFirst(4)) : $0 } ?? url.absoluteString
             VStack(alignment: .leading, spacing: 3) {
-                Text(host.prefix(1).uppercased()).font(.system(size: 13, weight: .bold)).foregroundStyle(.white)
+                Text(host.prefix(1).uppercased()).font(.system(size: 13, weight: .bold)).foregroundStyle(headerTextColor)
                     .frame(width: 26, height: 26).background(headerColor, in: Circle()).padding(.bottom, 6)
                 let rest = url.path + (url.query.map { "?\($0)" } ?? "")
                 if let title = clip.linkTitle {
@@ -715,7 +716,7 @@ struct ClipCard: View {
     /// A round symbol with one strong line under it, for a clip that is a single known thing such as a phone number.
     private func badge(_ symbol: String, title: String, subtitle: String?) -> some View {
         VStack(alignment: .leading, spacing: 3) {
-            Image(systemName: symbol).font(.system(size: 12, weight: .semibold)).foregroundStyle(.white)
+            Image(systemName: symbol).font(.system(size: 12, weight: .semibold)).foregroundStyle(headerTextColor)
                 .frame(width: 26, height: 26).background(headerColor, in: Circle()).padding(.bottom, 6)
             Text(title).font(.system(size: 15, weight: .semibold)).lineLimit(3)
             if let subtitle {
@@ -747,6 +748,10 @@ struct ClipCard: View {
 
     private var headerColor: Color {
         frameColor ?? SourceApp.color(bundleID: clip.sourceBundleID) ?? kind.color
+    }
+
+    private var headerTextColor: Color {
+        Color(nsColor: IconColor.textColor(on: NSColor(headerColor)))
     }
 
     private var kind: (title: String, color: Color) {

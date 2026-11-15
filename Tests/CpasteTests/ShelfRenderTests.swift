@@ -82,6 +82,11 @@ let rendersPreviews = ProcessInfo.processInfo.environment["CPASTE_RENDER"] != ni
     try snapshot("shelf-preview", appearance: .darkAqua)
     try snapshot("shelf-light-preview", appearance: .aqua)
 
+    let allClips = model.clips
+    model.clips = allClips.filter { $0.sourceBundleID == "com.google.Chrome" }
+    try snapshot("shelf-chrome-preview", appearance: .darkAqua)
+    model.clips = allClips
+
     model.cardSize = .small
     host.frame.size.height = CardSize.small.shelfHeight
     try snapshot("shelf-small-preview", appearance: .darkAqua)

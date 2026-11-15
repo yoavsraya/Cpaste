@@ -3,6 +3,29 @@
     <channel>
         <title>Cpaste</title>
         <item>
+            <title>0.1.9</title>
+            <pubDate>Sun, 15 Nov 2026 16:41:16 +0200</pubDate>
+            <link>https://github.com/yoavsraya/Cpaste/releases</link>
+            <sparkle:version>71</sparkle:version>
+            <sparkle:shortVersionString>0.1.9</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description sparkle:format="markdown"><![CDATA[## New
+
+- **New c↗ branding.** Updated app and menu-bar icons, keeping the familiar clip layout.
+- **Smarter clip colours.** Colours are selected from each source app’s icon palette using the same algorithm for every app, with no app-specific overrides. Headers remain fully opaque.
+- **More readable labels.** Source colours are toned for readable white text. Category colours stay as chosen, with white or black labels selected for contrast.
+- **Compare text clips.** Select two text clips with Cmd+click, then press Space or choose Compare from the right-click menu to see their differences side by side.
+- **Preview from the menu.** Right-click a clip and choose Preview to see it in full.
+- **Selection and hover feedback.** The selected card glows in its colour, and cards lift slightly under the pointer.
+
+## Install or update
+
+Choose **Check for Updates…** in the Cpaste menu, or download `Cpaste.zip` and replace the app in Applications. Requires macOS 14 or later on an Apple Silicon Mac.
+]]></description>
+            <enclosure url="https://github.com/yoavsraya/Cpaste/releases/download/v0.1.9/Cpaste.zip" length="3467905" type="application/octet-stream" sparkle:edSignature="B1ZRWVNJFDjMHs9Tm/T0hYSRrwC/GxGw/tN3NVeGro6ssBUQNIWyjmn8RbVi+WOIeZSbS9GG2UQK1dIejj6RCg=="/>
+        </item>
+        <item>
             <title>0.1.8</title>
             <pubDate>Sun, 15 Nov 2026 12:24:14 +0200</pubDate>
             <link>https://github.com/yoavsraya/Cpaste/releases</link>
@@ -46,26 +69,6 @@
 Already on 0.1.6? Choose **Check for Updates…** in the Cpaste menu. Otherwise download `Cpaste.zip` below and follow the README. Apple Silicon Macs only.
 ]]></description>
             <enclosure url="https://github.com/yoavsraya/Cpaste/releases/download/v0.1.7/Cpaste.zip" length="3311331" type="application/octet-stream" sparkle:edSignature="GqKP3+FnELcOzjK9IkPxkszUMzdpYvR5xoceprMIR2w7bNp3azCsvQKDri/BXAMbBA4PeZGfQlUPqJ8aLmMuDQ=="/>
-        </item>
-        <item>
-            <title>0.1.6</title>
-            <pubDate>Sat, 14 Nov 2026 19:59:08 +0200</pubDate>
-            <link>https://github.com/yoavsraya/Cpaste/releases</link>
-            <sparkle:version>39</sparkle:version>
-            <sparkle:shortVersionString>0.1.6</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <description sparkle:format="markdown"><![CDATA[## New
-- **Updates inside the app.** Cpaste checks once a day and shows **Update to Cpaste…** in its menu when a new version is out. One click installs it. Turn the check off in Settings, General.
-- **Smarter cards.** A link shows its site name. A colour code shows a swatch. Commands and code use a monospace font. An image fills the card and shows a few words read from it. A file shows its Finder icon and size.
-
-## Updating from 0.1.5 or older
-Download `Cpaste.zip` below and replace the app by hand one last time. From this version on, updates arrive inside Cpaste.
-
-## Install
-Download `Cpaste.zip` below and follow the README. Apple Silicon Macs only.
-]]></description>
-            <enclosure url="https://github.com/yoavsraya/Cpaste/releases/download/v0.1.6/Cpaste.zip" length="3230513" type="application/octet-stream" sparkle:edSignature="K4yNgt/u8DQYPa0OMI5SyIyK5XEynQsjd/zZW/1RdNaBWDT3uwTI006rFEx9S100d1hvOAaNSubQAN7n6ZjQAg=="/>
         </item>
     </channel>
 </rss>
