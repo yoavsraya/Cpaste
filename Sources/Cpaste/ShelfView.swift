@@ -594,12 +594,11 @@ struct ClipCard: View {
                 }
                 Spacer(minLength: 4)
                 Text(clip.lastUsedAt, format: .relative(presentation: .named))
-                    .font(.system(size: 9)).foregroundStyle(.secondary).lineLimit(1)
+                    .font(.system(size: 9)).opacity(0.85).lineLimit(1)
             }
+            .foregroundStyle(.white)
             .padding(.horizontal, 12).padding(.top, 3).frame(height: headerHeight)
-            .background(headerColor.opacity(colorScheme == .dark ? 0.30 : 0.28))
-            .overlay(alignment: .top) { headerColor.frame(height: 3) }
-            .overlay(alignment: .bottom) { headerColor.opacity(0.25).frame(height: 1) }
+            .background(headerColor)
 
             if clip.title != nil || (!isCompact && clip.content.kind != .image) {
                 Text(clip.title ?? kind.title)
@@ -621,8 +620,8 @@ struct ClipCard: View {
         .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 11, style: .continuous)
-                .strokeBorder(isSelected ? Color.primary.opacity(0.9) : frameColor?.opacity(0.45) ?? .primary.opacity(0.12),
-                              lineWidth: isSelected ? 2 : 1)
+                .strokeBorder(isSelected ? Color.primary.opacity(0.9) : frameColor ?? .primary.opacity(0.12),
+                              lineWidth: isSelected || frameColor != nil ? 2 : 1)
         )
         // Drawn as one layer, or the border casts its own glow into the card.
         .compositingGroup()
