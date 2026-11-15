@@ -1,1 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 256 256"><title>Cpaste app icon</title><rect width="256" height="256" fill="#123D3A"/><g transform="translate(4 -2)"><path fill="#B6E8CE" d="M208 40H88A48 48 0 0 0 40 88V168A48 48 0 0 0 88 216H208V176H92A12 12 0 0 1 80 164V92A12 12 0 0 1 92 80H208Z"/><rect fill="#FFF4DC" x="160" y="104" width="48" height="48" rx="8"/></g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 256 256">
+  <title>Cpaste c↗ app icon</title>
+  <rect width="256" height="256" fill="#ECECEF"/>
+  <g fill="#292A2E">
+    <path d="M136 121C126 108 112 102 96 102C64 102 38 128 38 160C38 192 64 218 96 218C114 218 130 210 141 196L122 179C116 187 107 192 96 192C78 192 64 178 64 160C64 142 78 130 96 130C106 130 115 134 121 142Z"/>
+    <path d="M150 40H218V108H190V88L158 120L138 100L170 68H150Z"/>
+  </g>
+</svg>
