@@ -428,7 +428,7 @@ struct ShelfView: View {
                     if model.position == .bottom {
                         LazyHStack(spacing: 12) { cardList }
                     } else {
-                        LazyVStack(spacing: 10) { cardList }
+                        LazyVStack(spacing: 12) { cardList }
                     }
                 }
                 // Room above the cards, so the glow and the lift are not cut by the scroll edge.
@@ -577,57 +577,67 @@ struct ClipCard: View {
     let imageFiles: ImageFiles
     let size: CGSize
     let isSelected: Bool
+    @Environment(\.colorScheme) private var colorScheme
     @State private var isHovered = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            HStack(alignment: .center) {
-                VStack(alignment: .leading, spacing: 1) {
-                    HStack(spacing: 5) {
-                        Text(clip.title ?? kind.title).font(.system(size: 14, weight: .semibold)).lineLimit(1)
-                        if clip.isPinned {
-                            Image(systemName: "pin.fill").font(.system(size: 10))
-                        }
-                    }
-                    Text(clip.lastUsedAt, format: .relative(presentation: .named))
-                        .font(.system(size: 11)).opacity(0.85)
-                }
-                Spacer()
+            HStack(spacing: 5) {
                 if let icon = SourceApp.icon(bundleID: clip.sourceBundleID) {
-                    Image(nsImage: icon).resizable().frame(width: 30, height: 30)
+                    Image(nsImage: icon).resizable().frame(width: 14, height: 14)
                 }
+                Text(clip.sourceBundleID.map(SourceApp.name) ?? "Cpaste")
+                    .font(.system(size: 10, weight: .medium)).lineLimit(1)
+                if clip.isPinned {
+                    Image(systemName: "pin.fill").font(.system(size: 9))
+                }
+                Spacer(minLength: 4)
+                Text(clip.lastUsedAt, format: .relative(presentation: .named))
+                    .font(.system(size: 9)).foregroundStyle(.secondary).lineLimit(1)
             }
-            .foregroundStyle(.white)
-            .padding(.horizontal, 12).frame(height: 46)
-            .background(headerColor)
+            .padding(.horizontal, 12).padding(.top, 3).frame(height: 38)
+            .background(headerColor.opacity(colorScheme == .dark ? 0.20 : 0.12))
+            .overlay(alignment: .top) { headerColor.frame(height: 3) }
+            .overlay(alignment: .bottom) { headerColor.opacity(0.25).frame(height: 1) }
+
+            if clip.title != nil || (!isCompact && clip.content.kind != .image) {
+                Text(clip.title ?? kind.title)
+                    .font(.system(size: 13, weight: .semibold)).lineLimit(1)
+                    .padding(.horizontal, 12).padding(.top, 10)
+            }
 
             content
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                .frame(maxWidth: .infinity, minHeight: 0, maxHeight: .infinity, alignment: .topLeading)
+                .clipped()
 
             if let detail {
-                Text(detail).font(.system(size: 11)).foregroundStyle(.secondary).lineLimit(1)
-                    .frame(maxWidth: .infinity).padding(.horizontal, 10).padding(.vertical, 7)
+                Text(detail).font(.system(size: 10)).foregroundStyle(.secondary).lineLimit(1)
+                    .frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 12).padding(.vertical, 8)
             }
         }
         .frame(width: size.width, height: size.height)
-        .background(Color(nsColor: .textBackgroundColor))
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .background(cardBackground)
+        .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .strokeBorder(isSelected ? Color.primary.opacity(0.9) : frameColor ?? .primary.opacity(0.12),
-                              lineWidth: isSelected || frameColor != nil ? 2 : 1)
+            RoundedRectangle(cornerRadius: 11, style: .continuous)
+                .strokeBorder(isSelected ? Color.primary.opacity(0.9) : frameColor?.opacity(0.45) ?? .primary.opacity(0.12),
+                              lineWidth: isSelected ? 2 : 1)
         )
         // Drawn as one layer, or the border casts its own glow into the card.
         .compositingGroup()
-        // The selected card glows in its own colour, and the card under the mouse rises off the shelf.
-        .shadow(color: isSelected ? headerColor.opacity(0.8) : .black.opacity(isHovered ? 0.35 : 0),
-                radius: isSelected ? 9 : 7, y: isSelected ? 0 : 5)
-        .scaleEffect(isHovered ? 1.025 : 1)
+        .shadow(color: isSelected ? Color.primary.opacity(0.12) : .black.opacity(isHovered ? 0.25 : 0),
+                radius: isSelected ? 2 : 7, y: isSelected ? 0 : 5)
         .offset(y: isHovered ? -2 : 0)
         .onHover { isHovered = $0 }
         .animation(.easeOut(duration: 0.12), value: isHovered)
         .animation(.easeOut(duration: 0.12), value: isSelected)
     }
+
+    private var cardBackground: Color {
+        colorScheme == .dark ? Color(red: 43 / 255, green: 44 / 255, blue: 48 / 255) : Color(nsColor: .textBackgroundColor)
+    }
+
+    private var isCompact: Bool { size.height < 180 }
 
     /// A saved clip takes its category's colour for the header and the frame.
     private var frameColor: Color? {
@@ -695,10 +705,10 @@ struct ClipCard: View {
             .padding(12)
         case .file(let path):
             let info = FileInfo.of(path: path)
-            VStack(spacing: 5) {
-                Image(nsImage: info.icon).resizable().frame(width: 52, height: 52)
+            VStack(spacing: isCompact ? 3 : 5) {
+                Image(nsImage: info.icon).resizable().frame(width: isCompact ? 32 : 52, height: isCompact ? 32 : 52)
                 Text((path as NSString).lastPathComponent).font(.system(size: 13, weight: .semibold))
-                    .lineLimit(2).multilineTextAlignment(.center)
+                    .lineLimit(isCompact ? 1 : 2).multilineTextAlignment(.center)
                 Text(info.detail).font(.system(size: 11)).foregroundStyle(.secondary).lineLimit(1)
             }
             .padding(10).frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -706,6 +716,8 @@ struct ClipCard: View {
             if let image = Thumbnails.image(at: imageFiles.thumbnailURL(sha256: sha)) {
                 // A clear overlay sized by the card, so a wide or tall picture is cropped and never stretches the card.
                 Color.clear.overlay(Image(nsImage: image).resizable().scaledToFill()).clipped()
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
+                    .padding(.horizontal, 10).padding(.top, 10)
             } else {
                 Label("Image file is missing", systemImage: "exclamationmark.triangle").font(.system(size: 12)).padding(12)
             }
@@ -715,14 +727,17 @@ struct ClipCard: View {
     /// A round symbol with one strong line under it, for a clip that is a single known thing such as a phone number.
     private func badge(_ symbol: String, title: String, subtitle: String?) -> some View {
         VStack(alignment: .leading, spacing: 3) {
-            Image(systemName: symbol).font(.system(size: 12, weight: .semibold)).foregroundStyle(.white)
-                .frame(width: 26, height: 26).background(headerColor, in: Circle()).padding(.bottom, 6)
-            Text(title).font(.system(size: 15, weight: .semibold)).lineLimit(3)
+            if size.height >= 140 {
+                Image(systemName: symbol).font(.system(size: isCompact ? 10 : 12, weight: .semibold)).foregroundStyle(.white)
+                    .frame(width: isCompact ? 20 : 26, height: isCompact ? 20 : 26)
+                    .background(headerColor, in: Circle()).padding(.bottom, isCompact ? 2 : 6)
+            }
+            Text(title).font(.system(size: isCompact ? 13 : 15, weight: .semibold)).lineLimit(isCompact ? 2 : 3)
             if let subtitle {
                 Text(subtitle).font(.system(size: 11.5)).foregroundStyle(.secondary).lineLimit(1)
             }
         }
-        .padding(12)
+        .padding(isCompact ? 8 : 12)
     }
 
     /// A fade over the last lines of a text that does not fit, saying how much is hidden.
@@ -730,13 +745,14 @@ struct ClipCard: View {
         // An estimate from average character width. A real measurement would need a layout pass per card.
         let wrapped = text.split(omittingEmptySubsequences: false, whereSeparator: \.isNewline)
             .reduce(0) { $0 + max(1, Int((CGFloat($1.count) / charactersPerLine).rounded(.up))) }
-        let visible = Int((size.height - 46 - 28 - 12) / lineHeight)
+        let titleHeight: CGFloat = clip.title != nil || !isCompact ? 26 : 0
+        let visible = Int((size.height - 38 - titleHeight - 28 - 12) / lineHeight)
         if wrapped > visible {
             let hidden = wrapped - visible
             Text("+ \(hidden) more \(hidden == 1 ? "line" : "lines")")
                 .font(.system(size: 10.5, weight: .medium)).foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, minHeight: 40, alignment: .bottom)
-                .background(LinearGradient(colors: [.clear, Color(nsColor: .textBackgroundColor)],
+                .background(LinearGradient(colors: [.clear, cardBackground],
                                            startPoint: .top, endPoint: UnitPoint(x: 0.5, y: 0.7)))
         }
     }
