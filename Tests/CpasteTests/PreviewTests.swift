@@ -75,4 +75,16 @@ private let screen = NSRect(x: 0, y: 0, width: 1728, height: 1050)
         try FileManager.default.createDirectory(at: output.deletingLastPathComponent(), withIntermediateDirectories: true)
         try #require(bitmap.representation(using: .png, properties: [:])).write(to: output)
     }
+
+    try store.insert(.text("host: example.com\nport: 80\ndebug: no\nretries: 3"), sourceBundleID: "com.apple.Terminal", linkTitle: nil, at: Date().addingTimeInterval(-60))
+    try store.insert(.text("host: example.com\nport: 8080\ndebug: no\ntimeout: 30\nretries: 3"), sourceBundleID: "com.apple.Terminal", linkTitle: nil, at: Date())
+    model.clips = try store.search("host", in: .all, limit: 2)
+    model.marked = Set(model.clips.map(\.id))
+    host.layoutSubtreeIfNeeded()
+    RunLoop.main.run(until: Date().addingTimeInterval(0.3))
+    let bitmap = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+    host.cacheDisplay(in: host.bounds, to: bitmap)
+    let output = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+        .appendingPathComponent("../../build/preview-compare.png").standardizedFileURL
+    try #require(bitmap.representation(using: .png, properties: [:])).write(to: output)
 }
