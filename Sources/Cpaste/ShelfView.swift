@@ -247,10 +247,10 @@ struct ShelfView: View {
             Spacer(minLength: 8)
             Text(model.undoHint ?? (model.marked.isEmpty
                  ? "space preview    ⌘click select    ⌘S save    ⌘E edit    ⌘P pin    ⌘⌫ delete"
-                 : "\(model.marked.count) selected    ⌘S save    ⌘J merge    ⌘⌫ delete"))
+                 : "\(model.marked.count) selected    \(model.marked.count == 2 ? "space compare    " : "")⌘S save    ⌘J merge    ⌘⌫ delete"))
                 .font(.system(size: 11)).foregroundStyle(.secondary).lineLimit(1)
         }
-        .padding(.horizontal, 16).padding(.top, 12).padding(.bottom, 8)
+        .padding(.horizontal, 16).padding(.top, 12).padding(.bottom, 2)
     }
 
     private var composeButton: some View {
@@ -429,7 +429,8 @@ struct ShelfView: View {
                         LazyVStack(spacing: 10) { cardList }
                     }
                 }
-                .padding(.horizontal, 16).padding(.bottom, 14).padding(.top, 4)
+                // Room above the cards, so the glow and the lift are not cut by the scroll edge.
+                .padding(.horizontal, 16).padding(.bottom, 14).padding(.top, 10)
             }
             .onChange(of: model.selection) { _, selection in
                 guard model.clips.indices.contains(selection) else { return }
@@ -566,6 +567,7 @@ struct ClipCard: View {
     let imageFiles: ImageFiles
     let size: CGSize
     let isSelected: Bool
+    @State private var isHovered = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -602,9 +604,19 @@ struct ClipCard: View {
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .strokeBorder(isSelected ? Color.primary : frameColor ?? .primary.opacity(0.12),
-                              lineWidth: isSelected ? 3 : frameColor == nil ? 1 : 2)
+                .strokeBorder(isSelected ? Color.primary.opacity(0.9) : frameColor ?? .primary.opacity(0.12),
+                              lineWidth: isSelected || frameColor != nil ? 2 : 1)
         )
+        // Drawn as one layer, or the border casts its own glow into the card.
+        .compositingGroup()
+        // The selected card glows in its own colour, and the card under the mouse rises off the shelf.
+        .shadow(color: isSelected ? headerColor.opacity(0.8) : .black.opacity(isHovered ? 0.35 : 0),
+                radius: isSelected ? 9 : 7, y: isSelected ? 0 : 5)
+        .scaleEffect(isHovered ? 1.025 : 1)
+        .offset(y: isHovered ? -2 : 0)
+        .onHover { isHovered = $0 }
+        .animation(.easeOut(duration: 0.12), value: isHovered)
+        .animation(.easeOut(duration: 0.12), value: isSelected)
     }
 
     /// A saved clip takes its category's colour for the header and the frame.

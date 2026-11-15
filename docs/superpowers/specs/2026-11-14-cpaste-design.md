@@ -26,6 +26,8 @@ UI options for the panel are in `ui-options.html` next to this file, published a
 - A filter menu narrows the shelf to one clip type or one source app.
 - The shelf follows the system light or dark appearance, and cards come in three sizes.
 - Space shows the selected clip in full in a second panel next to the shelf, and follows the selection. That panel cannot take the keyboard, so the shelf keeps it. While a search is typed, Space is a character of the search.
+- With exactly two text clips selected, Space shows them side by side, older on the left, with the differing lines marked. Two single-line texts are compared word by word, and JSON in its laid-out form.
+- The selected card has a thin ring and a glow in its header colour. The card under the mouse rises slightly.
 - Cmd+C copies a clip without pasting, Cmd+O opens a link, file or image, and a card can be dragged into another app.
 - A welcome window explains the shortcut and the Accessibility permission on the first launch only.
 - Settings shows the number of clips and the size of the history on disk.
