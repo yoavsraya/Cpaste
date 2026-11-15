@@ -579,15 +579,16 @@ struct ClipCard: View {
     let isSelected: Bool
     @Environment(\.colorScheme) private var colorScheme
     @State private var isHovered = false
+    private let headerHeight: CGFloat = 44
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 5) {
                 if let icon = SourceApp.icon(bundleID: clip.sourceBundleID) {
-                    Image(nsImage: icon).resizable().frame(width: 14, height: 14)
+                    Image(nsImage: icon).resizable().frame(width: 16, height: 16)
                 }
                 Text(clip.sourceBundleID.map(SourceApp.name) ?? "Cpaste")
-                    .font(.system(size: 10, weight: .medium)).lineLimit(1)
+                    .font(.system(size: 11, weight: .medium)).lineLimit(1)
                 if clip.isPinned {
                     Image(systemName: "pin.fill").font(.system(size: 9))
                 }
@@ -595,8 +596,8 @@ struct ClipCard: View {
                 Text(clip.lastUsedAt, format: .relative(presentation: .named))
                     .font(.system(size: 9)).foregroundStyle(.secondary).lineLimit(1)
             }
-            .padding(.horizontal, 12).padding(.top, 3).frame(height: 38)
-            .background(headerColor.opacity(colorScheme == .dark ? 0.20 : 0.12))
+            .padding(.horizontal, 12).padding(.top, 3).frame(height: headerHeight)
+            .background(headerColor.opacity(colorScheme == .dark ? 0.45 : 0.28))
             .overlay(alignment: .top) { headerColor.frame(height: 3) }
             .overlay(alignment: .bottom) { headerColor.opacity(0.25).frame(height: 1) }
 
@@ -746,7 +747,7 @@ struct ClipCard: View {
         let wrapped = text.split(omittingEmptySubsequences: false, whereSeparator: \.isNewline)
             .reduce(0) { $0 + max(1, Int((CGFloat($1.count) / charactersPerLine).rounded(.up))) }
         let titleHeight: CGFloat = clip.title != nil || !isCompact ? 26 : 0
-        let visible = Int((size.height - 38 - titleHeight - 28 - 12) / lineHeight)
+        let visible = Int((size.height - headerHeight - titleHeight - 28 - 12) / lineHeight)
         if wrapped > visible {
             let hidden = wrapped - visible
             Text("+ \(hidden) more \(hidden == 1 ? "line" : "lines")")
