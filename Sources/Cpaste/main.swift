@@ -25,6 +25,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var expiryTimer: Timer?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        applyAppearance()
         installStatusItem()
         do {
             let directory = try FileManager.default
@@ -319,11 +320,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         window.makeKeyAndOrderFront(nil)
     }
 
+    private func applyAppearance() {
+        NSApp.appearance = switch settings.appearance {
+        case .light: NSAppearance(named: .aqua)
+        case .dark: NSAppearance(named: .darkAqua)
+        case .system: nil
+        }
+    }
+
     @objc private func showSettings() {
         if settingsWindow == nil {
             let actions = SettingsActions(
                 setShortcutActive: { [weak self] in self?.setShortcutActive($0) ?? false },
                 retentionChanged: { [weak self] in self?.expireOldClips() },
+                appearanceChanged: { [weak self] in self?.applyAppearance() },
                 eraseHistory: { [weak self] in self?.eraseHistory() },
                 usageSummary: { [weak self] in self?.usageSummary() },
                 exportCategories: { [weak self] in self?.exportCategories() },

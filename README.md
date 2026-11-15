@@ -1,4 +1,4 @@
-<img src="Resources/Icons/cpaste-app-icon.png" width="96" alt="Cpaste icon">
+<img src="Resources/Icons/cpaste-app-icon.png" width="96" alt="Cpaste c↗ icon">
 
 # Cpaste
 
@@ -19,7 +19,7 @@ Press **Cmd+1** and a shelf slides up with your recent copies, text and images. 
 3. Drag `Cpaste.app` into your **Applications** folder.
 4. Double-click Cpaste to open it. macOS shows a warning and refuses, because the app does not come from the App Store. This is expected.
 5. Open **System Settings**, then **Privacy & Security**. Scroll down until you see a line about Cpaste, and click **Open Anyway**. You only do this once.
-6. Look at the top right of your screen. A small clipboard icon is now in the menu bar. That is Cpaste. It has no icon in the Dock.
+6. Look at the top right of your screen. The **c↗** icon is now in the menu bar. That is Cpaste. It has no icon in the Dock.
 
 ### Or install with Homebrew
 
@@ -44,6 +44,10 @@ If you skip this, Cpaste still works. Pressing Return then copies the clip, and 
 ## How to use it
 
 Copy things the way you always do. Cpaste records them in the background.
+
+Each card shows the source app’s icon and name in a coloured header, with the clip content below. The colour comes from the app’s icon, making clips from the same app easy to spot. Saved clips use their category’s colour instead.
+
+Choose **Light**, **Dark**, or **System** in **Settings → General → Appearance**. Dark mode uses charcoal card backgrounds; the coloured headers use 70% opacity in both modes. System follows your Mac’s appearance.
 
 | You want to | Do this |
 |---|---|
@@ -82,7 +86,7 @@ Cpaste deletes clips after one month. To keep a clip, put it in a category.
 
 To save or delete many clips at once, hold **Cmd** and click each one. Then drag any of them onto a category, press **Cmd+S**, or press **Cmd+Delete**.
 
-A clip in a category is never deleted automatically. Click a category to see only its clips, or press **Tab** to move through the categories. Each category has a colour, and its clips get a header and frame in that colour so you can spot them. Other clips take the colour of the app they were copied from, so Chrome clips are red and WhatsApp clips are green. Right-click a category to rename it, change its colour, or delete it. Drag a clip back onto **Clipboard** to take it out of its category. Drag a category onto another one to change their order.
+A clip in a category is never deleted automatically. Click a category to see only its clips, or press **Tab** to move through the categories. Each category has a colour, and its clips get a header and frame in that colour so you can spot them. Right-click a category to rename it, change its colour, or delete it. Drag a clip back onto **Clipboard** to take it out of its category. Drag a category onto another one to change their order.
 
 Drag a clip onto another clip to move it there. A new copy still lands at the front.
 
@@ -97,6 +101,7 @@ Click the Cpaste icon in the menu bar and choose **Settings…**.
 **General**
 - **Status** shows at a glance whether recording, pasting, updates and the history are working.
 - **Open at login** starts Cpaste whenever you turn on your Mac.
+- **Appearance** chooses Light, Dark, or System for the whole app. System follows your Mac’s appearance.
 - **Paste items** chooses what Return does. *To active app* pastes for you. *To clipboard* only copies the clip, and you press Cmd+V yourself.
 - **Position** puts the shelf along the bottom of the screen, or as a drawer on the right side with the clips in a column.
 - **Card size** makes the cards small, medium or large.
