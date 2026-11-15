@@ -585,10 +585,10 @@ struct ClipCard: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 5) {
                 if let icon = SourceApp.icon(bundleID: clip.sourceBundleID) {
-                    Image(nsImage: icon).resizable().frame(width: 16, height: 16)
+                    Image(nsImage: icon).resizable().frame(width: 20, height: 20)
                 }
                 Text(clip.sourceBundleID.map(SourceApp.name) ?? "Cpaste")
-                    .font(.system(size: 11, weight: .medium)).lineLimit(1)
+                    .font(.system(size: 13, weight: .medium)).lineLimit(1)
                 if clip.isPinned {
                     Image(systemName: "pin.fill").font(.system(size: 9))
                 }
