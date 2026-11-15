@@ -134,6 +134,8 @@ struct ShelfActions {
     var moveClip: (Clip, _ toPlaceOf: Clip) -> Void = { _, _ in }
     var merge: ([Clip]) -> Void = { _ in }
     var copyImageText: (Clip) -> Void = { _ in }
+    /// Opens the large preview of the current selection.
+    var showPreview: () -> Void = {}
 }
 
 enum CategoryIcons {
@@ -515,6 +517,11 @@ struct ShelfView: View {
         if !many {
             Button("Paste") { actions.paste(clip) }
             Button("Copy") { actions.copy(clip) }
+            Button("Preview") {
+                // The preview shows the selection, which a right-click does not move.
+                if let index = model.clips.firstIndex(where: { $0.id == clip.id }) { model.select(at: index) }
+                actions.showPreview()
+            }
             if let title = clip.openTitle {
                 Button(title) { actions.open(clip) }
             }
@@ -525,6 +532,9 @@ struct ShelfView: View {
             if clip.isEditable {
                 Button("Edit…") { actions.beginEditing(clip) }
             }
+        }
+        if targets.count == 2, targets.allSatisfy({ $0.content.kind == .text }) {
+            Button("Compare") { actions.showPreview() }
         }
         if targets.filter(\.isEditable).count > 1 {
             Button("Merge into One Clip") { actions.merge(targets) }

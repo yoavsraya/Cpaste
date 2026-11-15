@@ -54,7 +54,7 @@ Copy things the way you always do. Cpaste records them in the background.
 | Find an old clip | Just start typing |
 | Find a screenshot | Type `image` |
 | See a clip in full, the whole text or the full-size image | **Space**, and **Space** again to close |
-| Compare two text clips | **Cmd+click** both, then **Space**. What differs is marked in red and green |
+| Compare two text clips | **Cmd+click** both, then **Space** or right-click and choose **Compare**. What differs is marked in red and green |
 | Copy a clip without pasting it | **Cmd+C** |
 | Open a link, show a file in Finder, or open an image | **Cmd+O** |
 | Use a clip in another app | Drag its card out of the shelf |

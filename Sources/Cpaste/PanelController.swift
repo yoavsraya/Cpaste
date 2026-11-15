@@ -89,7 +89,10 @@ final class PanelController: NSObject, NSWindowDelegate {
                 self?.change("move the clip") { try $0.moveClip(id: clip.id, toPlaceOf: target.id) }
             },
             merge: { [weak self] in self?.merge($0) },
-            copyImageText: { [weak self] in self?.copyImageText(of: $0) }
+            copyImageText: { [weak self] in self?.copyImageText(of: $0) },
+            showPreview: { [weak self] in
+                if self?.preview.isVisible == false { self?.togglePreview() }
+            }
         )
         panel.contentView = NSHostingView(rootView: ShelfView(model: model, imageFiles: store.imageFiles, actions: actions))
     }
