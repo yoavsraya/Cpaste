@@ -72,7 +72,7 @@ A clip in a category is never deleted automatically. Click a category to see onl
 
 Drag a clip onto another clip to move it there. A new copy still lands at the front.
 
-Right-click a category to give it an emoji icon, or to make it **private**. A private category shows a lock, and its clips stay hidden, also from search, until you unlock it with Touch ID or your Mac password. It locks again each time the shelf closes.
+Right-click a category to give it an emoji icon, or to make it **private**. A private category shows a lock, and its clips stay hidden, also from search, until you unlock it with Touch ID or your Mac password. It stays unlocked for one minute, so closing and reopening the shelf in that time needs no second Touch ID.
 
 A pinned clip stays at the front and is never deleted automatically, even outside a category.
 

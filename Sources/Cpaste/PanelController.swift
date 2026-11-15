@@ -25,6 +25,7 @@ final class PanelController: NSObject, NSWindowDelegate {
     /// True while the shelf slides away, when it is still on screen but already closed to the user.
     private var isClosing = false
     private var isAuthenticating = false
+    private var unlocks = Unlocks()
 
     /// `onPasted` runs after a clip was written to the clipboard and before Command-V is sent.
     init(store: ClipStore, settings: AppSettings, onPasted: @escaping (Clip) -> Void) {
@@ -107,7 +108,7 @@ final class PanelController: NSObject, NSWindowDelegate {
         model.kindFilter = nil
         model.appFilter = nil
         model.order = .shelf
-        model.unlocked = []
+        model.unlocked = unlocks.open()
         model.naming = nil
         model.editor = nil
         model.cardSize = settings.cardSize
@@ -228,6 +229,7 @@ final class PanelController: NSObject, NSWindowDelegate {
             Task { @MainActor in
                 guard let self else { return }
                 if success {
+                    self.unlocks.unlock(category.id)
                     self.model.unlocked.insert(category.id)
                     action()
                 } else {

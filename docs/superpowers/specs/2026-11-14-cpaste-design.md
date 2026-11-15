@@ -38,7 +38,7 @@ UI options for the panel are in `ui-options.html` next to this file, published a
 - Each clip counts its pastes, and the filter menu can list the most used first.
 - Text clips that are an email address, a phone number, a date, a postal address or JSON get their own card. Detection is in `TextFlavor`, and only a whole-text match counts.
 - A link clip shows its page title. The title comes from the clipboard's `public.url-name` when the browser sets it, and otherwise from the browser's front tab through the Accessibility permission, only when that tab shows exactly the copied address.
-- A category can have an emoji icon. A category can be private: its clips are left out of every list until Touch ID or the Mac password unlocks it, for as long as the shelf stays open. Deleting it or making it public needs the same proof. Private categories are not exported.
+- A category can have an emoji icon. A category can be private: its clips are left out of every list until Touch ID or the Mac password unlocks it. The unlock lasts one minute and is checked when the shelf opens, so an open shelf never locks under the user. Deleting it or making it public needs the same proof. Private categories are not exported.
 - Settings opens with a status list for recording, pasting, updates, the history and unread images.
 - `docs/demo.gif` is drawn from real shelf states by `CPASTE_RENDER=1 swift test`.
 - Lives in the menu bar with no Dock icon. Starts at login when the setting is on.
