@@ -19,6 +19,7 @@ struct SettingsActions {
     /// Turns the global shortcut off while a new one is being typed, and back on afterwards. Returns false if the system refused it.
     var setShortcutActive: (Bool) -> Bool = { _ in true }
     var retentionChanged: () -> Void = {}
+    var appearanceChanged: () -> Void = {}
     var eraseHistory: () -> Void = {}
     /// A line such as "214 clips, 38 MB on disk", or nil when the store cannot be read.
     var usageSummary: () -> String? = { nil }
@@ -181,6 +182,13 @@ private struct GeneralPane: View {
                 if let loginError {
                     Text(loginError).font(.callout).foregroundStyle(.red)
                 }
+            }
+            Section("Appearance") {
+                Picker("Appearance", selection: $settings.appearance) {
+                    ForEach(AppAppearance.allCases, id: \.self) { Text($0.label).tag($0) }
+                }
+                .pickerStyle(.segmented).labelsHidden()
+                .onChange(of: settings.appearance) { actions.appearanceChanged() }
             }
             Section("Shelf") {
                 Picker("Position", selection: $settings.shelfPosition) {

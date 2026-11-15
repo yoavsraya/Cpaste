@@ -97,6 +97,7 @@ Click the Cpaste icon in the menu bar and choose **Settings…**.
 **General**
 - **Status** shows at a glance whether recording, pasting, updates and the history are working.
 - **Open at login** starts Cpaste whenever you turn on your Mac.
+- **Appearance** chooses Light, Dark, or System for the whole app. System follows your Mac’s appearance.
 - **Paste items** chooses what Return does. *To active app* pastes for you. *To clipboard* only copies the clip, and you press Cmd+V yourself.
 - **Position** puts the shelf along the bottom of the screen, or as a drawer on the right side with the clips in a column.
 - **Card size** makes the cards small, medium or large.

@@ -56,6 +56,25 @@ private func keyDown(_ keyCode: Int, _ flags: NSEvent.ModifierFlags) -> NSEvent 
     #expect(settings.quickPasteModifier == .command)
 }
 
+@MainActor
+@Test(arguments: AppAppearance.allCases)
+func appearanceSurvivesARelaunch(appearance: AppAppearance) {
+    let defaults = freshDefaults()
+    let settings = AppSettings(defaults: defaults)
+    #expect(settings.appearance == .system)
+    settings.appearance = appearance
+    #expect(AppSettings(defaults: defaults).appearance == appearance)
+    settings.appearance = .system
+    #expect(AppSettings(defaults: defaults).appearance == .system)
+}
+
+@MainActor
+@Test func unknownAppearanceFallsBackToSystem() {
+    let defaults = freshDefaults()
+    defaults.set("unknown", forKey: "appearance")
+    #expect(AppSettings(defaults: defaults).appearance == .system)
+}
+
 @Test func aShortcutMatchesOnlyItsOwnKeyAndModifiers() {
     let next = Shortcut.nextCategoryDefault
     // Arrow keys always carry the function and numeric-pad flags, which must not break the match.

@@ -2,6 +2,12 @@ import CpasteCore
 import Foundation
 import Observation
 
+enum AppAppearance: String, CaseIterable {
+    case light, dark, system
+
+    var label: String { rawValue.capitalized }
+}
+
 @MainActor
 @Observable
 final class AppSettings {
@@ -32,6 +38,9 @@ final class AppSettings {
     var cardSize: CardSize {
         didSet { defaults.set(cardSize.rawValue, forKey: Key.cardSize) }
     }
+    var appearance: AppAppearance {
+        didSet { defaults.set(appearance.rawValue, forKey: Key.appearance) }
+    }
     var showsDuringScreenSharing: Bool {
         didSet { defaults.set(showsDuringScreenSharing, forKey: Key.showsDuringScreenSharing) }
     }
@@ -57,6 +66,7 @@ final class AppSettings {
         hasSeenWelcome = defaults.bool(forKey: Key.hasSeenWelcome)
         shelfPosition = defaults.string(forKey: Key.shelfPosition).flatMap(ShelfPosition.init(rawValue:)) ?? .bottom
         cardSize = defaults.string(forKey: Key.cardSize).flatMap(CardSize.init(rawValue:)) ?? .medium
+        appearance = defaults.string(forKey: Key.appearance).flatMap(AppAppearance.init(rawValue:)) ?? .system
         showsDuringScreenSharing = defaults.object(forKey: Key.showsDuringScreenSharing) as? Bool ?? true
         retention = defaults.string(forKey: Key.retention).flatMap(Retention.init(rawValue:)) ?? .month
         ignoredBundleIDs = defaults.stringArray(forKey: Key.ignoredBundleIDs) ?? Self.defaultIgnoredBundleIDs
@@ -80,6 +90,7 @@ final class AppSettings {
         static let quickPasteModifier = "quickPasteModifier"
         static let pasteTarget = "pasteTarget"
         static let cardSize = "cardSize"
+        static let appearance = "appearance"
         static let shelfPosition = "shelfPosition"
         static let hasSeenWelcome = "hasSeenWelcome"
         static let showsDuringScreenSharing = "showsDuringScreenSharing"
