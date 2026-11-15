@@ -82,7 +82,7 @@ Cpaste deletes clips after one month. To keep a clip, put it in a category.
 
 To save or delete many clips at once, hold **Cmd** and click each one. Then drag any of them onto a category, press **Cmd+S**, or press **Cmd+Delete**.
 
-A clip in a category is never deleted automatically. Click a category to see only its clips, or press **Tab** to move through the categories. Each category has a colour, and its clips get a header and frame in that colour so you can spot them. Headers use solid colours in both light and dark mode. Other clips take the colour of the app they were copied from, so Chrome clips are red and WhatsApp clips are green. Right-click a category to rename it, change its colour, or delete it. Drag a clip back onto **Clipboard** to take it out of its category. Drag a category onto another one to change their order.
+A clip in a category is never deleted automatically. Click a category to see only its clips, or press **Tab** to move through the categories. Each category has a colour, and its clips get a header and frame in that colour so you can spot them. Headers use solid colours in both light and dark mode. Other clips use a colour selected from the source app’s icon palette, balancing prominence, saturation and lightness. The selected tone is adjusted for readable white text, with the same algorithm for every app and no app-specific overrides. Category colours stay as chosen, with white or black labels selected for contrast. Right-click a category to rename it, change its colour, or delete it. Drag a clip back onto **Clipboard** to take it out of its category. Drag a category onto another one to change their order.
 
 Drag a clip onto another clip to move it there. A new copy still lands at the front.
 
