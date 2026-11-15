@@ -599,7 +599,7 @@ struct ClipCard: View {
             }
             .foregroundStyle(.white)
             .padding(.horizontal, 12).frame(height: 46)
-            .background(headerColor.opacity(0.8))
+            .background(headerColor)
 
             content
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
