@@ -598,7 +598,7 @@ struct ClipCard: View {
             }
             .foregroundStyle(.white)
             .padding(.horizontal, 12).padding(.top, 3).frame(height: headerHeight)
-            .background(headerColor.opacity(0.8))
+            .background(headerColor.opacity(0.7))
 
             if clip.title != nil || (!isCompact && clip.content.kind != .image) {
                 Text(clip.title ?? kind.title)
