@@ -117,7 +117,7 @@ The app is a single `Cpaste.app` in a zip. Two facts shape this.
 
 ## Updates
 
-Cpaste updates itself with [Sparkle](https://sparkle-project.org). The feed is `appcast.xml` on `main`, read through `raw.githubusercontent.com`, and each entry points at the zip of a GitHub Release. Updates are signed with an EdDSA key whose private half is in the owner's login keychain under the account `cpaste`. Without that key no update can be published, so it needs a backup. `scripts/release.sh` builds, signs, updates the feed and publishes. The build number is the commit count, because Sparkle compares builds by that number.
+Cpaste updates itself with [Sparkle](https://sparkle-project.org). The feed is `appcast.xml` on `main`, read through `raw.githubusercontent.com`, and each entry points at the zip of a GitHub Release. Updates are signed with an EdDSA key whose private half is in the owner's login keychain under the account `cpaste`. Without that key no update can be published, so it needs a backup. `scripts/release.sh` builds, signs, updates the feed and publishes. It also writes the new version and zip checksum into `Casks/cpaste.rb`. That file makes this repo a Homebrew tap, so no second repo is needed. Homebrew is only another way to do the first install, and the cask says `auto_updates true` because Sparkle does the updating. The build number is the commit count, because Sparkle compares builds by that number.
 
 No Apple Developer ID is involved. Measured on 2026-11-14: a test copy at version 0.0.1 found a local feed, downloaded version 9.9.9, replaced itself on quit, kept a valid signature, and launched.
 

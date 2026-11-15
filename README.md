@@ -21,6 +21,18 @@ Press **Cmd+1** and a shelf slides up with your recent copies, text and images. 
 5. Open **System Settings**, then **Privacy & Security**. Scroll down until you see a line about Cpaste, and click **Open Anyway**. You only do this once.
 6. Look at the top right of your screen. A small clipboard icon is now in the menu bar. That is Cpaste. It has no icon in the Dock.
 
+### Or install with Homebrew
+
+If you use [Homebrew](https://brew.sh), these three lines replace steps 1 to 3:
+
+```bash
+brew tap yoavsraya/cpaste https://github.com/yoavsraya/Cpaste
+brew trust yoavsraya/cpaste   # only newer Homebrew versions need this line
+brew install --cask yoavsraya/cpaste/cpaste
+```
+
+Steps 4 to 6 stay the same, because macOS shows the same warning. After that Cpaste updates itself, so you do not need `brew upgrade`.
+
 ## One more step, so Cpaste can paste for you
 
 1. Press **Cmd+1**. The shelf opens.
@@ -133,7 +145,7 @@ swift test                 # run the tests
 CPASTE_RENDER=1 swift test # also draw the shelf and settings into build/*.png
 ./scripts/build-app.sh     # build build/Cpaste.app
 ./scripts/package.sh       # build dist/Cpaste.zip
-./scripts/release.sh 0.1.6 notes.md   # publish a release and add it to the update feed
+./scripts/release.sh 0.1.6 notes.md   # publish a release, add it to the update feed and the Homebrew cask
 ```
 
 If `swift test` cannot find the `Testing` module, your Mac is using the Command Line Tools instead of Xcode. Run `export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer` first.

@@ -28,8 +28,12 @@ cp "$NOTES" "$FEED/Cpaste.md"
 "$SPARKLE_BIN/generate_appcast" --account cpaste --embed-release-notes \
   --download-url-prefix "$REPO_URL/releases/download/$TAG/" --link "$REPO_URL/releases" "$FEED"
 cp "$FEED/appcast.xml" appcast.xml
-git add appcast.xml
-git commit -qm "chore: add $VERSION to the update feed"
+
+# Homebrew downloads the same zip and refuses it when the checksum in the cask differs.
+SHA="$(shasum -a 256 dist/Cpaste.zip | cut -d' ' -f1)"
+sed -i '' -e "s/^  version \".*\"/  version \"$VERSION\"/" -e "s/^  sha256 \".*\"/  sha256 \"$SHA\"/" Casks/cpaste.rb
+git add appcast.xml Casks/cpaste.rb
+git commit -qm "chore: add $VERSION to the update feed and the Homebrew cask"
 
 # The download must exist before the feed that points at it goes live.
 git tag "$TAG"
