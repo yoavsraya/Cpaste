@@ -45,9 +45,9 @@ If you skip this, Cpaste still works. Pressing Return then copies the clip, and 
 
 Copy things the way you always do. Cpaste records them in the background.
 
-Each card shows the source app’s icon and name in a solid coloured header, with the clip content below. The colour comes from the app’s icon, making clips from the same app easy to spot. Saved clips use their category’s colour instead.
+Each card shows the source app’s icon and name in a coloured header, with the clip content below. The colour comes from the app’s icon, making clips from the same app easy to spot. Saved clips use their category’s colour instead.
 
-Choose **Light**, **Dark**, or **System** in **Settings → General → Appearance**. Dark mode uses charcoal card backgrounds; the coloured headers stay solid in both modes. System follows your Mac’s appearance.
+Choose **Light**, **Dark**, or **System** in **Settings → General → Appearance**. Dark mode uses charcoal card backgrounds; the coloured headers use 80% opacity in both modes. System follows your Mac’s appearance.
 
 | You want to | Do this |
 |---|---|
