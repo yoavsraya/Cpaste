@@ -92,9 +92,21 @@ final class PanelController: NSObject, NSWindowDelegate {
             copyImageText: { [weak self] in self?.copyImageText(of: $0) },
             showPreview: { [weak self] in
                 if self?.preview.isVisible == false { self?.togglePreview() }
-            }
+            },
+            pickColor: { [weak self] in self?.pickColor() }
         )
         panel.contentView = NSHostingView(rootView: ShelfView(model: model, imageFiles: store.imageFiles, actions: actions))
+    }
+
+    /// Closes the shelf so every pixel can be reached, then copies the code of the pixel the user clicks.
+    func pickColor() {
+        if panel.isVisible { close() }
+        NSColorSampler().show { color in
+            guard let color = color?.usingColorSpace(.sRGB) else { return }
+            let code = hexColorCode(red: color.redComponent, green: color.greenComponent, blue: color.blueComponent)
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(code, forType: .string)
+        }
     }
 
     /// Opens the shelf with the edit box ready for a new clip.

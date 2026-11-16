@@ -78,3 +78,9 @@ func lookalikesStayPlain(text: String) {
 @Test func bracesThatDoNotParseAreNotJSON() {
     #expect(TextFlavor("{not json}") == .code)
 }
+
+@Test func aPickedColourBecomesAHexCodeCpasteReadsBack() {
+    #expect(hexColorCode(red: 76.0 / 255, green: 141.0 / 255, blue: 246.0 / 255) == "#4C8DF6")
+    #expect(hexColorCode(red: 0, green: 1.2, blue: -0.1) == "#00FF00")
+    #expect(TextFlavor(hexColorCode(red: 1, green: 0.5, blue: 0)) == .color(red: 1, green: 128.0 / 255, blue: 0))
+}
