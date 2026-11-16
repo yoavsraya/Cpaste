@@ -66,6 +66,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let menu = NSMenu()
         openMenuItem = menu.addItem(withTitle: "Open Cpaste", action: #selector(togglePanel), keyEquivalent: "")
         menu.addItem(withTitle: "New Clip…", action: #selector(newClip), keyEquivalent: "n")
+        menu.addItem(withTitle: "Pick Colour from Screen", action: #selector(pickColor), keyEquivalent: "")
         menu.addItem(withTitle: "Settings…", action: #selector(showSettings), keyEquivalent: ",")
         let pause = menu.addItem(withTitle: "Pause Recording", action: nil, keyEquivalent: "")
         pause.submenu = NSMenu()
@@ -295,6 +296,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func newClip() {
         panel?.compose()
+    }
+
+    @objc private func pickColor() {
+        panel?.pickColor()
     }
 
     @objc private func togglePanel() {

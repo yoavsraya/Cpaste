@@ -136,6 +136,8 @@ struct ShelfActions {
     var copyImageText: (Clip) -> Void = { _ in }
     /// Opens the large preview of the current selection.
     var showPreview: () -> Void = {}
+    /// Lets the user click a pixel anywhere on screen and copies its colour code.
+    var pickColor: () -> Void = {}
 }
 
 enum CategoryIcons {
@@ -221,6 +223,7 @@ struct ShelfView: View {
                 searchField
                 filterMenu
                 composeButton
+                colorButton
             }
             if model.naming != nil {
                 namingField
@@ -240,6 +243,7 @@ struct ShelfView: View {
 
             filterMenu
             composeButton
+            colorButton
 
             if model.naming != nil {
                 namingField
@@ -261,6 +265,14 @@ struct ShelfView: View {
                 .foregroundStyle(.secondary).frame(width: 26, height: 30).contentShape(Rectangle())
         }
         .buttonStyle(.plain).help("New clip (⌘N)")
+    }
+
+    private var colorButton: some View {
+        Button(action: actions.pickColor) {
+            Image(systemName: "eyedropper").font(.system(size: 13, weight: .medium))
+                .foregroundStyle(.secondary).frame(width: 26, height: 30).contentShape(Rectangle())
+        }
+        .buttonStyle(.plain).help("Pick a colour from the screen and copy its code")
     }
 
     private var filterMenu: some View {

@@ -113,3 +113,9 @@ public enum TextFlavor: Equatable, Sendable {
         return codeLines.count * 2 >= lines.count && !codeLines.isEmpty && (lines.count > 1 || first.hasSuffix(";") || first.hasSuffix("}"))
     }
 }
+
+/// The `#RRGGBB` code of a colour whose parts run from 0 to 1.
+public func hexColorCode(red: Double, green: Double, blue: Double) -> String {
+    let parts = [red, green, blue].map { Int((min(max($0, 0), 1) * 255).rounded()) }
+    return String(format: "#%02X%02X%02X", parts[0], parts[1], parts[2])
+}
