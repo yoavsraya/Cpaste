@@ -3,6 +3,24 @@
     <channel>
         <title>Cpaste</title>
         <item>
+            <title>0.1.10</title>
+            <pubDate>Mon, 16 Nov 2026 16:18:04 +0200</pubDate>
+            <link>https://github.com/yoavsraya/Cpaste/releases</link>
+            <sparkle:version>79</sparkle:version>
+            <sparkle:shortVersionString>0.1.10</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description sparkle:format="markdown"><![CDATA[## New
+
+- **Pick a colour from the screen.** Click the new eyedropper button in the shelf, or choose **Pick Colour from Screen** in the menu-bar menu. Click any pixel and its code, for example `#4C8DF6`, is copied and added to the shelf as a colour clip.
+
+## Install or update
+
+Choose **Check for Updates…** in the Cpaste menu, or download `Cpaste.zip` and replace the app in Applications. Requires macOS 14 or later on an Apple Silicon Mac.
+]]></description>
+            <enclosure url="https://github.com/yoavsraya/Cpaste/releases/download/v0.1.10/Cpaste.zip" length="3469642" type="application/octet-stream" sparkle:edSignature="su1l5mCK9xum63OaDbeFeZg7mfiEfBAyATnLrJ/cAN2RVQYBgIUdGKufpewarbptaIh+4hQZ36H5b/1N5e7zDA=="/>
+        </item>
+        <item>
             <title>0.1.9</title>
             <pubDate>Sun, 15 Nov 2026 16:41:16 +0200</pubDate>
             <link>https://github.com/yoavsraya/Cpaste/releases</link>
@@ -45,30 +63,6 @@ Choose **Check for Updates…** in the Cpaste menu, or download `Cpaste.zip` and
 - **Install with Homebrew.** See the README for the three commands.
 ]]></description>
             <enclosure url="https://github.com/yoavsraya/Cpaste/releases/download/v0.1.8/Cpaste.zip" length="3402632" type="application/octet-stream" sparkle:edSignature="ASkx2Q8c0X1cwrSZFSXLrC6QmZuJ477bWyLkKr5CiRtXEmdCVxNMcvzXg0Jjm0cax88Pa3IvZFFDNss6sPC+Cw=="/>
-        </item>
-        <item>
-            <title>0.1.7</title>
-            <pubDate>Sun, 15 Nov 2026 00:17:50 +0200</pubDate>
-            <link>https://github.com/yoavsraya/Cpaste/releases</link>
-            <sparkle:version>48</sparkle:version>
-            <sparkle:shortVersionString>0.1.7</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <description sparkle:format="markdown"><![CDATA[## New
-- **New clip.** Type a clip by hand with Cmd+N, the pencil button, or **New Clip…** in the menu-bar menu.
-- **Undo delete.** Press Cmd+Z after a delete, while the shelf is still open.
-- **Merge clips.** Select several text clips and press Cmd+J to combine them into one.
-- **Copy text from an image.** Shift+Cmd+C copies the words Cpaste read in a screenshot.
-- **Pause recording** from the menu-bar menu, for 5 minutes, an hour, or until you resume.
-- **Export and import.** Save every category with its clips to one file, in Settings.
-- **Shelf on the right.** Choose a side drawer in Settings, General, Shelf.
-- **Slide animation** when the shelf opens and closes.
-- Long text fades out on its card and says how many lines are hidden.
-
-## Install
-Already on 0.1.6? Choose **Check for Updates…** in the Cpaste menu. Otherwise download `Cpaste.zip` below and follow the README. Apple Silicon Macs only.
-]]></description>
-            <enclosure url="https://github.com/yoavsraya/Cpaste/releases/download/v0.1.7/Cpaste.zip" length="3311331" type="application/octet-stream" sparkle:edSignature="GqKP3+FnELcOzjK9IkPxkszUMzdpYvR5xoceprMIR2w7bNp3azCsvQKDri/BXAMbBA4PeZGfQlUPqJ8aLmMuDQ=="/>
         </item>
     </channel>
 </rss>

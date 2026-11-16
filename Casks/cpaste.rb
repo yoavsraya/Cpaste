@@ -1,6 +1,6 @@
 cask "cpaste" do
-  version "0.1.9"
-  sha256 "49397cec2c0e905bdeaff18bddf8303f10c0c473cef21b5df6689d53fbb42305"
+  version "0.1.10"
+  sha256 "c9c4f72b2420f45a6369ab6ba1ac1f320f700959569b1ab33ee588d9d9eabfda"
 
   url "https://github.com/yoavsraya/Cpaste/releases/download/v#{version}/Cpaste.zip"
   name "Cpaste"
